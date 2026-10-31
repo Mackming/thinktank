@@ -1,0 +1,89 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+backend/venv/
+
+# Node / Frontend
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+*.tsbuildinfo
+.pnp
+.pnp.js
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Databases, Storage & Local State
+*.db
+*.sqlite
+*.sqlite3
+backend/thinktank.db
+backend/chroma_db/
+chroma_db/
+backend/uploads/*
+!backend/uploads/.gitkeep
+/uploads/*
+!/uploads/.gitkeep
+
+# Browser Automation & User Profiles (CRITICAL: Live sessions & cookies)
+backend/browser_data/
+backend/browser_data_*/
+browser_data/
+browser_data_*/
+*.crx
+Crashpad/
+Default/
+
+# Logs & Temporary Files
+*.log
+logs/
+crash.log
+
+# Environment & Secrets
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# IDE & OS Files
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

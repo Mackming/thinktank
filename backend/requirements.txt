@@ -1,0 +1,13 @@
+fastapi
+uvicorn[standard]
+pydantic
+playwright
+playwright-stealth
+websockets
+python-dotenv
+sqlalchemy
+beautifulsoup4
+chromadb
+sentence-transformers
+json-repair
+PyMuPDF
