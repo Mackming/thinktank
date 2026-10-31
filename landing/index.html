@@ -14,326 +14,58 @@
   <style>
     :root {
       --paper: #e6e0cf;
+      --paper-dark: #ded7c4;
       --ink: #201c15;
       --line: #16130e;
       --band: #d7d2c2;
       --band2: #dcd7c7;
       --accent: #9e3223;
-      --card-bg: #efeadd;
+      --accent-hover: #b53d2d;
+      --card-bg: #ece7d7;
+      --card-alt: #f2eee3;
       --ring: 40px;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body {
-      height: 100%;
+    html {
+      scroll-behavior: smooth;
       background: var(--paper);
-      overflow: hidden;
+    }
+    body {
+      min-height: 100%;
+      background: var(--paper);
       color: var(--ink);
       -webkit-font-smoothing: antialiased;
       font-family: "Open Sans", sans-serif;
+      overflow-x: hidden;
+      position: relative;
     }
     html.fine, html.fine * { cursor: none !important; }
     a { color: inherit; text-decoration: none; }
 
-    /* Physical Frame */
-    .frame {
-      position: fixed;
-      inset: 14px;
-      border-radius: 34px;
+    /* Outer Physical Frame */
+    .outer-frame {
+      border: 8px solid var(--line);
+      margin: 12px;
+      border-radius: 28px;
+      background: var(--paper);
+      position: relative;
+      box-shadow: 0 0 0 1px rgba(22,19,14,0.15), 0 20px 50px rgba(0,0,0,0.12);
       overflow: hidden;
-      background: var(--paper);
-      isolation: isolate;
-    }
-    .frame::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-      border: 6px solid var(--line);
-      border-radius: 34px;
-      pointer-events: none;
-      z-index: 40;
     }
 
-    /* Ambient Drift Shade */
+    /* Ambient Drifting Shade */
     #shade {
-      position: absolute;
-      left: -12%;
-      top: -12%;
-      width: 124%;
-      height: 124%;
+      position: fixed;
+      left: -10%;
+      top: -10%;
+      width: 120%;
+      height: 120%;
       mix-blend-mode: multiply;
-      opacity: .32;
+      opacity: .28;
       pointer-events: none;
-      z-index: 35;
+      z-index: 50;
       will-change: transform;
-    }
-
-    /* Canvas Scene Coordinate System */
-    #scene {
-      position: absolute;
-      left: 0;
-      top: 0;
-      transform-origin: 0 0;
-      width: 1600px;
-      height: 900px;
-    }
-    #scene > * { position: absolute; }
-    svg.w { left: 0; top: 0; overflow: visible; pointer-events: none; }
-    svg.w path { vector-effect: none; }
-
-    /* Sprites & Vessels */
-    .spr { will-change: transform; }
-    #vessel { transform-origin: 50% 100%; }
-    
-    /* Typography & Copy */
-    h1, h2 {
-      font-family: "Goudy Bookletter 1911", "Sorts Mill Goudy", serif;
-      font-weight: 400;
-      text-transform: uppercase;
-      letter-spacing: -.045em;
-    }
-    
-    .eb {
-      font: 400 24px/1 "Sorts Mill Goudy", serif;
-      letter-spacing: .22em;
-      text-transform: uppercase;
-      color: var(--line);
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    .eb::before, .eb::after {
-      content: "";
-      display: inline-block;
-      width: 28px;
-      height: 1px;
-      background: var(--line);
-      opacity: 0.5;
-    }
-
-    /* Scene 1: The Arena */
-    .t1 {
-      left: 140px;
-      top: 250px;
-      width: 720px;
-      z-index: 10;
-      will-change: transform, opacity;
-    }
-    h1 {
-      font-size: 84px;
-      line-height: .92;
-      margin-top: 24px;
-      color: var(--line);
-    }
-    .t1 p {
-      margin-top: 24px;
-      font-size: 16px;
-      line-height: 1.6;
-      max-width: 540px;
-      color: #3b3529;
-      font-family: "Sorts Mill Goudy", serif;
-    }
-
-    /* Physical Pill Buttons */
-    .pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      position: relative;
-      font: 700 16px/1 "Josefin Sans", sans-serif;
-      text-transform: uppercase;
-      letter-spacing: .08em;
-      border: 3px solid var(--line);
-      border-radius: 999px;
-      background: #ece7d8;
-      box-shadow: 0 7px 0 -1px var(--paper), 0 7px 0 2px var(--line);
-      transition: transform .22s cubic-bezier(.2,1,.3,1), box-shadow .22s cubic-bezier(.2,1,.3,1), background .2s;
-      cursor: pointer;
-      user-select: none;
-    }
-    .pill:hover {
-      transform: translateY(3px);
-      box-shadow: 0 4px 0 -1px var(--paper), 0 4px 0 2px var(--line);
-      background: #f4efe1;
-    }
-    .pill:active {
-      transform: translateY(6px);
-      box-shadow: 0 1px 0 -1px var(--paper), 0 1px 0 2px var(--line);
-    }
-    .pill.accent {
-      background: var(--accent);
-      color: #faf6ec;
-      border-color: var(--line);
-    }
-    .pill.accent:hover {
-      background: #b53d2d;
-    }
-    .t1 .pill {
-      margin-top: 36px;
-      padding: 19px 48px 16px;
-    }
-
-    /* Scene 2: The Chamber of Articles */
-    .t2 {
-      left: 120px;
-      top: 90px;
-      width: 1360px;
-      z-index: 25;
-      opacity: 0;
-      pointer-events: none;
-      will-change: transform, opacity;
-    }
-    h2 {
-      font-size: 68px;
-      line-height: .96;
-      color: var(--line);
-    }
-    .t2-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
-      padding-bottom: 24px;
-      border-bottom: 2px solid rgba(22,19,14,0.15);
-      margin-bottom: 30px;
-    }
-    .t2-header p {
-      max-width: 560px;
-      font-size: 15px;
-      line-height: 1.6;
-      color: #433c2e;
-      font-family: "Sorts Mill Goudy", serif;
-    }
-
-    /* Interactive Deliberation Matrix Cards */
-    .modes-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 20px;
-      margin-bottom: 30px;
-    }
-    .mode-card {
-      background: var(--card-bg);
-      border: 2px solid var(--line);
-      border-radius: 16px;
-      padding: 24px;
-      box-shadow: 0 4px 0 var(--line);
-      transition: all 0.2s ease;
-      position: relative;
-    }
-    .mode-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 0 var(--line);
-    }
-    .mode-card .badge {
-      font: 700 11px/1 "JetBrains Mono", monospace;
-      text-transform: uppercase;
-      letter-spacing: .15em;
-      padding: 4px 8px;
-      border: 1.5px solid var(--line);
-      border-radius: 4px;
-      display: inline-block;
-      margin-bottom: 14px;
-      background: var(--paper);
-    }
-    .mode-card h3 {
-      font: 400 24px/1.1 "Goudy Bookletter 1911", serif;
-      text-transform: uppercase;
-      margin-bottom: 10px;
-      color: var(--line);
-    }
-    .mode-card p {
-      font-size: 13px;
-      line-height: 1.55;
-      color: #4a4233;
-    }
-
-    /* Terminal & Quickstart Bar */
-    .dock-bar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: #1e1b15;
-      color: #ede7d6;
-      border-radius: 18px;
-      padding: 16px 28px;
-      border: 3px solid var(--line);
-      box-shadow: 0 6px 0 -1px var(--paper), 0 6px 0 2px var(--line);
-    }
-    .dock-term {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      font-family: "JetBrains Mono", monospace;
-      font-size: 13px;
-    }
-    .term-prompt { color: #8a8270; user-select: none; }
-    .term-code { color: #e7dfca; font-weight: 500; }
-    .copy-btn {
-      background: #2b271f;
-      border: 1px solid #484133;
-      color: #dcd4be;
-      padding: 8px 16px;
-      border-radius: 8px;
-      font-family: "JetBrains Mono", monospace;
-      font-size: 11px;
-      letter-spacing: .08em;
-      text-transform: uppercase;
-      cursor: pointer;
-      transition: all 0.15s;
-    }
-    .copy-btn:hover { background: #3d372c; color: #fff; }
-
-    /* Chrome: Navigation & Logo */
-    .logo {
-      position: absolute;
-      left: 6.6%;
-      top: 54px;
-      z-index: 30;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      font: 400 32px/1 "Goudy Bookletter 1911", serif;
-      letter-spacing: -.03em;
-      color: var(--line);
-      user-select: none;
-    }
-    .logo svg { width: 30px; height: 30px; }
-
-    nav {
-      position: absolute;
-      right: 6.6%;
-      top: 58px;
-      z-index: 30;
-      display: flex;
-      align-items: center;
-      gap: clamp(24px, 4vw, 54px);
-    }
-    nav a {
-      position: relative;
-      font: 700 13px/1 "Open Sans", sans-serif;
-      letter-spacing: .16em;
-      text-transform: uppercase;
-      color: var(--line);
-      padding: 8px 0;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    nav a::after {
-      content: "";
-      position: absolute;
-      left: 0;
-      bottom: 2px;
-      width: 100%;
-      height: 2px;
-      background: var(--line);
-      transform: scaleX(0);
-      transform-origin: 100% 50%;
-      transition: transform .25s ease;
-    }
-    nav a:hover::after {
-      transform: scaleX(1);
-      transform-origin: 0 50%;
     }
 
     /* Precision Ring Cursor */
@@ -341,7 +73,7 @@
       position: fixed;
       left: 0;
       top: 0;
-      z-index: 60;
+      z-index: 999;
       pointer-events: none;
       border-radius: 50%;
       display: none;
@@ -362,191 +94,1054 @@
       opacity: 0;
     }
 
-    /* Responsiveness & Portrait Layout */
-    .portrait .t1 { left: 60px; top: 160px; width: 680px; }
-    .portrait h1 { font-size: 78px; }
-    .portrait .t2 { left: 40px; top: 70px; width: 720px; }
-    .portrait .modes-grid { grid-template-columns: repeat(2, 1fr); gap: 14px; }
-    .portrait h2 { font-size: 56px; }
+    /* Typography */
+    h1, h2, h3, h4 {
+      font-family: "Goudy Bookletter 1911", "Sorts Mill Goudy", serif;
+      font-weight: 400;
+      text-transform: uppercase;
+      letter-spacing: -.045em;
+    }
+    .serif-text {
+      font-family: "Sorts Mill Goudy", serif;
+      line-height: 1.7;
+    }
+    .mono-tag {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 11px;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+    }
+    .eyebrow {
+      font: 400 20px/1 "Sorts Mill Goudy", serif;
+      letter-spacing: .22em;
+      text-transform: uppercase;
+      color: var(--line);
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .eyebrow::before, .eyebrow::after {
+      content: "";
+      display: inline-block;
+      width: 24px;
+      height: 1px;
+      background: var(--line);
+      opacity: 0.5;
+    }
 
+    /* Tactile Physical Buttons */
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      position: relative;
+      font: 700 15px/1 "Josefin Sans", sans-serif;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      border: 3px solid var(--line);
+      border-radius: 999px;
+      background: #ece7d8;
+      color: var(--line);
+      box-shadow: 0 6px 0 -1px var(--paper), 0 6px 0 2px var(--line);
+      transition: transform .22s cubic-bezier(.2,1,.3,1), box-shadow .22s cubic-bezier(.2,1,.3,1), background .2s;
+      cursor: pointer;
+      user-select: none;
+      padding: 16px 36px 14px;
+    }
+    .pill:hover {
+      transform: translateY(3px);
+      box-shadow: 0 3px 0 -1px var(--paper), 0 3px 0 2px var(--line);
+      background: #f4efe1;
+    }
+    .pill:active {
+      transform: translateY(6px);
+      box-shadow: 0 0 0 -1px var(--paper), 0 0 0 2px var(--line);
+    }
+    .pill.accent {
+      background: var(--accent);
+      color: #faf6ec;
+      border-color: var(--line);
+    }
+    .pill.accent:hover {
+      background: var(--accent-hover);
+    }
+
+    /* Fixed / Sticky Nav Bar */
+    header.site-nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(230, 224, 207, 0.94);
+      backdrop-filter: blur(12px);
+      border-bottom: 3px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 48px;
+    }
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font: 400 30px/1 "Goudy Bookletter 1911", serif;
+      letter-spacing: -.03em;
+      color: var(--line);
+    }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 36px;
+    }
+    .nav-links a {
+      font: 700 12.5px/1 "Open Sans", sans-serif;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      color: var(--line);
+      position: relative;
+      padding: 6px 0;
+    }
+    .nav-links a::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: 100%;
+      height: 2px;
+      background: var(--line);
+      transform: scaleX(0);
+      transform-origin: 100% 50%;
+      transition: transform .25s ease;
+    }
+    .nav-links a:hover::after {
+      transform: scaleX(1);
+      transform-origin: 0 50%;
+    }
+
+    /* Container */
+    .container {
+      max-width: 1380px;
+      margin: 0 auto;
+      padding: 0 48px;
+    }
+
+    /* ─────────────────────────────────────────────────────────────
+       HERO SECTION: THE ARENA & HARMONIC WAVES
+    ───────────────────────────────────────────────────────────── */
+    section.hero-section {
+      position: relative;
+      min-height: 850px;
+      height: 92vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      overflow: hidden;
+      border-bottom: 4px solid var(--line);
+    }
+    .hero-content {
+      position: relative;
+      z-index: 20;
+      max-width: 760px;
+      padding-bottom: 80px;
+    }
+    .hero-title {
+      font-size: 88px;
+      line-height: .92;
+      margin: 24px 0;
+      color: var(--line);
+    }
+    .hero-sub {
+      font-size: 19px;
+      line-height: 1.65;
+      color: #3b3529;
+      max-width: 580px;
+      margin-bottom: 36px;
+      font-family: "Sorts Mill Goudy", serif;
+    }
+    .hero-actions {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+
+    /* Wave Stage Overlay */
+    .hero-stage {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+    #heroScene {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1600px;
+      height: 900px;
+      transform-origin: 0 0;
+    }
+    #heroScene > * { position: absolute; }
+    svg.w { left: 0; top: 0; overflow: visible; }
+    svg.w path { vector-effect: none; }
+    #vessel { transform-origin: 50% 100%; will-change: transform; }
+
+    /* ─────────────────────────────────────────────────────────────
+       SECTION: THE CORE PROBLEM (THE SOLITARY MODEL FALLACY)
+    ───────────────────────────────────────────────────────────── */
+    section.problem-section {
+      padding: 110px 0;
+      border-bottom: 4px solid var(--line);
+      background: var(--paper-dark);
+      position: relative;
+    }
+    .section-header {
+      text-align: center;
+      max-width: 840px;
+      margin: 0 auto 64px;
+    }
+    .section-header h2 {
+      font-size: 58px;
+      line-height: .98;
+      margin: 16px 0;
+    }
+    .section-header p {
+      font-size: 18px;
+      color: #4a4233;
+      font-family: "Sorts Mill Goudy", serif;
+    }
+
+    .versus-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 36px;
+    }
+    .versus-card {
+      background: var(--card-bg);
+      border: 3px solid var(--line);
+      border-radius: 20px;
+      padding: 40px;
+      box-shadow: 0 8px 0 var(--line);
+      position: relative;
+    }
+    .versus-card.flawed {
+      border-color: #8c8270;
+      background: #dfd8c7;
+    }
+    .versus-card.superior {
+      border-color: var(--line);
+      background: var(--card-alt);
+    }
+    .versus-badge {
+      display: inline-block;
+      padding: 6px 14px;
+      border-radius: 6px;
+      border: 2px solid var(--line);
+      font-weight: 700;
+      margin-bottom: 20px;
+    }
+    .versus-card h3 {
+      font-size: 32px;
+      line-height: 1;
+      margin-bottom: 16px;
+    }
+    .versus-list {
+      list-style: none;
+      margin-top: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .versus-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      font-size: 15px;
+      line-height: 1.5;
+    }
+    .versus-icon {
+      flex-shrink: 0;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1.5px solid var(--line);
+      margin-top: 2px;
+    }
+
+    /* ─────────────────────────────────────────────────────────────
+       SECTION: THE FOUR WORKFLOWS (INTERACTIVE DELIBERATION DECK)
+    ───────────────────────────────────────────────────────────── */
+    section.workflows-section {
+      padding: 120px 0;
+      border-bottom: 4px solid var(--line);
+      background: var(--paper);
+    }
+    .workflow-tabs {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 48px;
+      flex-wrap: wrap;
+    }
+    .tab-btn {
+      font: 700 13px/1 "Josefin Sans", sans-serif;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      padding: 14px 28px;
+      border: 2px solid var(--line);
+      border-radius: 999px;
+      background: var(--paper);
+      cursor: pointer;
+      box-shadow: 0 4px 0 var(--line);
+      transition: all 0.2s ease;
+    }
+    .tab-btn.active, .tab-btn:hover {
+      background: var(--line);
+      color: #faf6ec;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 0 var(--line);
+    }
+    
+    .workflow-display {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 40px;
+      background: var(--card-bg);
+      border: 3px solid var(--line);
+      border-radius: 24px;
+      padding: 48px;
+      box-shadow: 0 10px 0 var(--line);
+    }
+    .workflow-info h3 {
+      font-size: 42px;
+      line-height: 1;
+      margin: 12px 0 18px;
+    }
+    .workflow-info p {
+      font-size: 17px;
+      line-height: 1.6;
+      color: #3b3529;
+      font-family: "Sorts Mill Goudy", serif;
+      margin-bottom: 28px;
+    }
+    .steps-chain {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .step-item {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: var(--paper);
+      border: 2px solid var(--line);
+      padding: 14px 20px;
+      border-radius: 12px;
+    }
+    .step-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      background: var(--line);
+      color: #faf6ec;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 12px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .transcript-box {
+      background: #1e1b15;
+      color: #ede7d6;
+      border-radius: 16px;
+      border: 2.5px solid var(--line);
+      padding: 24px;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 12.5px;
+      line-height: 1.6;
+      height: 100%;
+      overflow-y: auto;
+      max-height: 480px;
+      box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+    }
+    .tr-role {
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 2px 6px;
+      border-radius: 4px;
+      display: inline-block;
+      margin-bottom: 8px;
+    }
+    .tr-prop { background: #344837; color: #a3e0a8; }
+    .tr-crit { background: #5c2920; color: #f2a79d; }
+    .tr-synth { background: #483d29; color: #f0d592; }
+
+    /* ─────────────────────────────────────────────────────────────
+       SECTION: ARCHITECTURE & ZERO-COST MECHANICS
+    ───────────────────────────────────────────────────────────── */
+    section.arch-section {
+      padding: 110px 0;
+      border-bottom: 4px solid var(--line);
+      background: var(--paper-dark);
+    }
+    .arch-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 32px;
+    }
+    .arch-card {
+      background: var(--card-bg);
+      border: 3px solid var(--line);
+      border-radius: 20px;
+      padding: 36px 32px;
+      box-shadow: 0 6px 0 var(--line);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .arch-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 9px 0 var(--line);
+      transition: transform .2s, box-shadow .2s;
+    }
+    .arch-header {
+      margin-bottom: 20px;
+    }
+    .arch-icon {
+      width: 48px;
+      height: 48px;
+      border: 2px solid var(--line);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 18px;
+      background: var(--paper);
+    }
+    .arch-card h3 {
+      font-size: 28px;
+      line-height: 1.05;
+      margin-bottom: 12px;
+    }
+    .arch-card p {
+      font-size: 14.5px;
+      line-height: 1.6;
+      color: #4a4233;
+    }
+    .arch-footer {
+      margin-top: 24px;
+      padding-top: 16px;
+      border-top: 1.5px solid rgba(22,19,14,0.15);
+      font-size: 12px;
+      font-family: "JetBrains Mono", monospace;
+      color: #635a47;
+    }
+
+    /* ─────────────────────────────────────────────────────────────
+       SECTION: THE CEO DIRECTIVE (HUMAN IN THE LOOP)
+    ───────────────────────────────────────────────────────────── */
+    section.human-section {
+      padding: 110px 0;
+      border-bottom: 4px solid var(--line);
+      background: var(--paper);
+    }
+    .human-banner {
+      background: var(--card-alt);
+      border: 4px solid var(--line);
+      border-radius: 28px;
+      padding: 56px;
+      box-shadow: 0 10px 0 var(--line);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 54px;
+      align-items: center;
+    }
+    .human-banner h2 {
+      font-size: 52px;
+      line-height: .98;
+      margin: 16px 0 20px;
+    }
+    .human-banner p {
+      font-size: 17px;
+      line-height: 1.65;
+      color: #3b3529;
+      font-family: "Sorts Mill Goudy", serif;
+      margin-bottom: 28px;
+    }
+    .directive-card {
+      background: #1e1b15;
+      color: #ede7d6;
+      border: 3px solid var(--line);
+      border-radius: 18px;
+      padding: 28px;
+      box-shadow: 0 6px 0 var(--line);
+      font-family: "JetBrains Mono", monospace;
+    }
+    .directive-badge {
+      background: var(--accent);
+      color: #fff;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      display: inline-block;
+      margin-bottom: 14px;
+    }
+    .directive-quote {
+      font-size: 14px;
+      line-height: 1.6;
+      color: #f1ebd8;
+      border-left: 3px solid var(--accent);
+      padding-left: 14px;
+      margin: 14px 0;
+      font-style: italic;
+    }
+
+    /* ─────────────────────────────────────────────────────────────
+       SECTION: QUICKSTART & DEPLOYMENT TERMINAL
+    ───────────────────────────────────────────────────────────── */
+    section.quickstart-section {
+      padding: 120px 0;
+      border-bottom: 4px solid var(--line);
+      background: var(--paper-dark);
+    }
+    .terminal-window {
+      background: #171511;
+      border: 3px solid var(--line);
+      border-radius: 20px;
+      box-shadow: 0 12px 0 var(--line);
+      overflow: hidden;
+      max-width: 960px;
+      margin: 0 auto;
+    }
+    .term-header {
+      background: #25211a;
+      padding: 14px 20px;
+      border-bottom: 2px solid #332d24;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .term-dots {
+      display: flex;
+      gap: 8px;
+    }
+    .term-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: 1px solid rgba(0,0,0,0.4);
+    }
+    .term-body {
+      padding: 32px;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 13.5px;
+      line-height: 1.8;
+      color: #ede7d6;
+    }
+    .term-line {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 0;
+    }
+    .term-cmd { color: #8ec07c; font-weight: 700; }
+    .term-comment { color: #7c6f64; font-style: italic; }
+    .term-btn {
+      background: #2e281e;
+      border: 1px solid #4a4132;
+      color: #d5c4a1;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 11px;
+      text-transform: uppercase;
+      padding: 6px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .term-btn:hover { background: #3d3528; color: #fff; }
+
+    /* ─────────────────────────────────────────────────────────────
+       COLOPHON & FOOTER
+    ───────────────────────────────────────────────────────────── */
+    footer.site-footer {
+      padding: 80px 0 60px;
+      background: var(--paper);
+      text-align: center;
+    }
+    .footer-seal {
+      width: 56px;
+      height: 56px;
+      margin: 0 auto 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 3px solid var(--line);
+      border-radius: 50%;
+      background: var(--card-bg);
+    }
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 32px;
+      margin: 28px 0;
+      font: 700 13px/1 "Josefin Sans", sans-serif;
+      text-transform: uppercase;
+      letter-spacing: .12em;
+    }
+    .footer-credit {
+      font-size: 13px;
+      color: #6d6451;
+      font-family: "Sorts Mill Goudy", serif;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .hero-title { font-size: 64px; }
+      .versus-grid, .workflow-display, .human-banner, .arch-grid {
+        grid-template-columns: 1fr;
+      }
+      .workflow-display { padding: 32px; }
+      header.site-nav { padding: 18px 24px; }
+      .container { padding: 0 24px; }
+    }
     @media (max-width: 768px) {
-      .frame, .frame::after { border-radius: 20px; }
-      .frame { inset: 8px; }
-      .logo { top: 24px; left: 24px; font-size: 24px; }
-      .logo svg { width: 22px; height: 22px; }
-      nav { top: 28px; right: 24px; gap: 16px; }
-      nav a { font-size: 11px; letter-spacing: .08em; }
-      nav a:nth-child(2) { display: none; }
+      .outer-frame { margin: 6px; border-width: 5px; border-radius: 18px; }
+      .hero-title { font-size: 48px; }
+      .nav-links { display: none; }
+      .hero-actions { flex-direction: column; align-items: stretch; }
+      .pill { justify-content: center; }
     }
   </style>
 </head>
 <body>
 
-  <!-- Physical Frame Container -->
-  <main class="frame" id="frame">
-    
-    <!-- Logo & Brand Mark -->
-    <a href="#" class="logo" data-go="0">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="10"/>
-        <path d="m4.93 4.93 4.24 4.24"/>
-        <path d="m14.83 9.17 4.24-4.24"/>
-        <path d="m14.83 14.83 4.24 4.24"/>
-        <path d="m9.17 14.83-4.24 4.24"/>
-        <circle cx="12" cy="12" r="4"/>
-      </svg>
-      <span>ThinkTank</span>
-    </a>
+  <!-- Physical Frame Enclosure -->
+  <div class="outer-frame">
 
-    <!-- Top Navigation -->
-    <nav>
-      <a href="#" data-go="0">The Horizon</a>
-      <a href="#" data-go="1">The Articles</a>
-      <a href="https://github.com/Mackming/thinktank" target="_blank" rel="noopener noreferrer">
-        <span>GitHub</span>
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="7" y1="17" x2="17" y2="7"></line>
-          <polyline points="7 7 17 7 17 17"></polyline>
+    <!-- Sticky Navigation Bar -->
+    <header class="site-nav">
+      <a href="#" class="nav-logo">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="m4.93 4.93 4.24 4.24"/>
+          <path d="m14.83 9.17 4.24-4.24"/>
+          <path d="m14.83 14.83 4.24 4.24"/>
+          <path d="m9.17 14.83-4.24 4.24"/>
+          <circle cx="12" cy="12" r="4"/>
         </svg>
+        <span>ThinkTank</span>
       </a>
-    </nav>
 
-    <!-- Canvas Simulation Scene -->
-    <div id="scene">
-      
-      <!-- Cloud Drift -->
-      <div class="spr" id="cloudA" style="top: 140px; opacity: 0.9;">
-        <svg viewBox="0 0 300 80" width="300" height="80">
-          <path fill="#d3cebe" d="M0 79c14-3 26-3 38-10-4-16 10-30 30-26 6-22 42-34 62-16 16-12 42-6 50 14 10-2 18 2 22 8 24 22 66 26 98 30z"/>
-        </svg>
+      <div class="nav-links">
+        <a href="#arena">The Arena</a>
+        <a href="#fallacy">The Problem</a>
+        <a href="#workflows">Workflows</a>
+        <a href="#architecture">Architecture</a>
+        <a href="#quickstart">Quickstart</a>
+        <a href="https://github.com/Mackming/thinktank" target="_blank" rel="noopener noreferrer">
+          GitHub ↗
+        </a>
       </div>
 
-      <!-- Back Waves (Behind the Vessel) -->
-      <svg class="w" id="wBack"></svg>
+      <a href="https://github.com/Mackming/thinktank" target="_blank" class="pill accent" style="padding: 10px 22px; font-size: 13px;">
+        <span>⭐ Star Repository</span>
+      </a>
+    </header>
 
-      <!-- Scene 1: The Arena Copy -->
-      <div class="t1" id="t1">
-        <div class="eb">The Council of Three · Zero-Cost AI</div>
-        <h1>The Arena of<br>Rival Minds</h1>
-        <p>
-          Where solitary models hallucinate in isolation, ThinkTank orchestrates cross-examination. DeepSeek, Qwen, and GLM locked in structured dialectics to forge verifiable strategy.
-        </p>
-        <div style="display: flex; gap: 16px; align-items: center;">
-          <a href="#" class="pill accent" data-go="1">
-            <span>Summon the Council</span>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="5" y1="12" x2="19" y2="12"></line>
-              <polyline points="12 5 19 12 12 19"></polyline>
-            </svg>
-          </a>
-          <a href="https://github.com/Mackming/thinktank" target="_blank" class="pill" style="padding: 19px 34px 16px;">
-            <span>⭐ Star on GitHub</span>
-          </a>
+    <!-- ─────────────────────────────────────────────────────────────
+         CHAPTER 0: THE HERO HORIZON & LIVING WAVES
+    ───────────────────────────────────────────────────────────── -->
+    <section class="hero-section" id="arena">
+      <div class="container" style="position: relative; z-index: 25;">
+        <div class="hero-content">
+          <div class="eyebrow">The Council of Three · Zero-Cost AI</div>
+          <h1 class="hero-title">The Arena of<br>Rival Minds</h1>
+          <p class="hero-sub">
+            Where solitary AI models hallucinate in comfortable isolation, ThinkTank orchestrates rigorous cross-examination. DeepSeek, Qwen, and GLM locked in structured dialectics to forge verifiable strategy.
+          </p>
+          <div class="hero-actions">
+            <a href="#workflows" class="pill accent">
+              <span>Inspect the Workflows</span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <polyline points="19 12 12 19 5 12"></polyline>
+              </svg>
+            </a>
+            <a href="#architecture" class="pill">
+              <span>How It Operates</span>
+            </a>
+          </div>
         </div>
       </div>
 
-      <!-- The Astrolabe of Reason (Vessel that rides the waves) -->
-      <div class="spr" id="vessel">
-        <svg width="420" height="420" viewBox="0 0 420 420" fill="none" stroke="var(--line)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-          <!-- Outer Astrolabe Ring -->
-          <circle cx="210" cy="210" r="180" stroke-width="4.5" fill="#dfd9c7"/>
-          <circle cx="210" cy="210" r="168" stroke-dasharray="4 8" stroke-width="1.8"/>
-          
-          <!-- Dialectic Compass Crossbars -->
-          <line x1="210" y1="30" x2="210" y2="390" stroke-width="2.5"/>
-          <line x1="30" y1="210" x2="390" y2="210" stroke-width="2.5"/>
-          <circle cx="210" cy="210" r="120" stroke-dasharray="2 6"/>
-          
-          <!-- The Three Frontier Pillars (DeepSeek, Qwen, GLM) -->
-          <!-- North-West: DeepSeek R1 -->
-          <g transform="translate(130, 130)">
-            <circle cx="0" cy="0" r="26" fill="#ece7d8" stroke-width="3"/>
-            <text x="0" y="5" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="700" fill="var(--line)">R1</text>
-          </g>
-          <!-- North-East: Qwen 2.5 -->
-          <g transform="translate(290, 130)">
-            <circle cx="0" cy="0" r="26" fill="#ece7d8" stroke-width="3"/>
-            <text x="0" y="5" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="700" fill="var(--line)">QW</text>
-          </g>
-          <!-- South: GLM 4 -->
-          <g transform="translate(210, 310)">
-            <circle cx="0" cy="0" r="26" fill="#ece7d8" stroke-width="3"/>
-            <text x="0" y="5" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="700" fill="var(--line)">GLM</text>
-          </g>
+      <!-- Animated Waves Stage -->
+      <div class="hero-stage">
+        <div id="heroScene">
+          <!-- Back Waves -->
+          <svg class="w" id="wBack"></svg>
 
-          <!-- Central Core / Synthesis Dial -->
-          <circle cx="210" cy="210" r="48" fill="#e8dfcc" stroke-width="3.5"/>
-          <circle cx="210" cy="210" r="24" fill="var(--accent)" stroke="var(--line)" stroke-width="2.5"/>
-          <circle cx="210" cy="210" r="6" fill="#faf6ec"/>
-          
-          <!-- Decorative Celestial Arcs -->
-          <path d="M120 210 A90 90 0 0 1 300 210" stroke-width="1.8" stroke-dasharray="6 4"/>
-          <path d="M140 280 A80 80 0 0 1 280 280" stroke-width="1.5"/>
-        </svg>
-      </div>
+          <!-- The Astrolabe of Reason (Vessel that rides the waves) -->
+          <div id="vessel">
+            <svg width="420" height="420" viewBox="0 0 420 420" fill="none" stroke="var(--line)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="210" cy="210" r="180" stroke-width="4.5" fill="#dfd9c7"/>
+              <circle cx="210" cy="210" r="168" stroke-dasharray="4 8" stroke-width="1.8"/>
+              <line x1="210" y1="30" x2="210" y2="390" stroke-width="2.5"/>
+              <line x1="30" y1="210" x2="390" y2="210" stroke-width="2.5"/>
+              <circle cx="210" cy="210" r="120" stroke-dasharray="2 6"/>
+              
+              <!-- Frontier Model Nodes -->
+              <g transform="translate(130, 130)">
+                <circle cx="0" cy="0" r="26" fill="#ece7d8" stroke-width="3"/>
+                <text x="0" y="5" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="700" fill="var(--line)">R1</text>
+              </g>
+              <g transform="translate(290, 130)">
+                <circle cx="0" cy="0" r="26" fill="#ece7d8" stroke-width="3"/>
+                <text x="0" y="5" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="700" fill="var(--line)">QW</text>
+              </g>
+              <g transform="translate(210, 310)">
+                <circle cx="0" cy="0" r="26" fill="#ece7d8" stroke-width="3"/>
+                <text x="0" y="5" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="700" fill="var(--line)">GLM</text>
+              </g>
 
-      <!-- Front Waves (Rising tide that submerges Scene 1 into Scene 2) -->
-      <svg class="w" id="wFront"></svg>
-
-      <!-- Scene 2: The Articles of Deliberation -->
-      <div class="t2" id="t2">
-        <div class="t2-header">
-          <div>
-            <div class="eb" style="font-size: 19px;">The Articles of Deliberation</div>
-            <h2 style="margin-top: 10px;">The Engine of Reason</h2>
+              <!-- Central Core -->
+              <circle cx="210" cy="210" r="48" fill="#e8dfcc" stroke-width="3.5"/>
+              <circle cx="210" cy="210" r="24" fill="var(--accent)" stroke="var(--line)" stroke-width="2.5"/>
+              <circle cx="210" cy="210" r="6" fill="#faf6ec"/>
+            </svg>
           </div>
+
+          <!-- Front Waves -->
+          <svg class="w" id="wFront"></svg>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─────────────────────────────────────────────────────────────
+         CHAPTER I: THE SOLITARY MODEL FALLACY
+    ───────────────────────────────────────────────────────────── -->
+    <section class="problem-section" id="fallacy">
+      <div class="container">
+        <div class="section-header">
+          <div class="eyebrow">The Solitary Model Fallacy</div>
+          <h2>Why Single LLMs Fail</h2>
           <p>
-            Autonomous browser automation commands live chat portals in parallel, enforcing strict JSON schemas, logical fallacy detection, and ChromaDB vector retrieval.
+            When a single model generates plans in isolation, it nods to itself. It has no adversary to puncture its assumptions, no auditor hunting for fallacies, and no counter-weight to verify citations.
           </p>
         </div>
 
-        <!-- 4 Deliberation Modes Grid -->
-        <div class="modes-grid">
-          <div class="mode-card">
-            <span class="badge" style="color: #9e3223; border-color: #9e3223;">Mode I</span>
-            <h3>The Debate</h3>
-            <p>Proposer defends visionary strategy while Critic hunts logical fallacies (Sunk Cost, Survivorship Bias) until the confidence convergence metric breaks.</p>
+        <div class="versus-grid">
+          <!-- The Solitary Prompt -->
+          <div class="versus-card flawed">
+            <span class="versus-badge" style="background: #cfc6b2; color: #524a3a;">The Solitary Prompt (ChatGPT / Claude)</span>
+            <h3>The Echo Chamber</h3>
+            <p class="serif-text">
+              Single-agent workflows suffer from inherent confirmation bias. Once an LLM picks an angle, it defends it with cheerful sycophancy.
+            </p>
+            <ul class="versus-list">
+              <li>
+                <div class="versus-icon" style="background: #cca9a3; color: #70261b;">✕</div>
+                <div><strong>Unchallenged Assumptions:</strong> Never stress-tested against opposing models or edge cases.</div>
+              </li>
+              <li>
+                <div class="versus-icon" style="background: #cca9a3; color: #70261b;">✕</div>
+                <div><strong>Compounding Hallucinations:</strong> One slight mistake early in generation distorts the entire action plan.</div>
+              </li>
+              <li>
+                <div class="versus-icon" style="background: #cca9a3; color: #70261b;">✕</div>
+                <div><strong>Astronomical API Invoices:</strong> Metered token rates punish deep exploration and long multi-turn contexts.</div>
+              </li>
+            </ul>
           </div>
-          <div class="mode-card">
-            <span class="badge">Mode II</span>
-            <h3>The Swarm</h3>
-            <p>Parallel problem decomposition. Models analyze distinct angles concurrently and submit structured findings for synthesis into an executive action plan.</p>
-          </div>
-          <div class="mode-card">
-            <span class="badge">Mode III</span>
-            <h3>The Crucible</h3>
-            <p>Sequential refinement pipeline passing raw drafts through Drafter ➔ Editor ➔ Polisher, continuously purging hallucinations.</p>
-          </div>
-          <div class="mode-card">
-            <span class="badge">Mode IV</span>
-            <h3>The Socratic</h3>
-            <p>An interactive council of mentors probing your assumptions through established psychological and philosophical frameworks.</p>
-          </div>
-        </div>
 
-        <!-- Terminal Quickstart & Actions -->
-        <div class="dock-bar">
-          <div class="dock-term">
-            <span class="term-prompt">$</span>
-            <span class="term-code" id="termText">git clone https://github.com/Mackming/thinktank.git && cd thinktank</span>
-            <button class="copy-btn" id="copyBtn">Copy Command</button>
-          </div>
-          <div style="display: flex; gap: 14px;">
-            <a href="https://github.com/Mackming/thinktank" target="_blank" class="pill accent" style="padding: 12px 28px; font-size: 14px;">
-              <span>Deploy Local Engine</span>
-            </a>
-            <a href="#" class="pill" data-go="0" style="padding: 12px 24px; font-size: 14px;">
-              <span>Return to Horizon</span>
-            </a>
+          <!-- The ThinkTank Council -->
+          <div class="versus-card superior">
+            <span class="versus-badge" style="background: var(--accent); color: #fff;">The ThinkTank Dialectic</span>
+            <h3>Adversarial Synthesis</h3>
+            <p class="serif-text">
+              ThinkTank pits distinct frontier models against one another. Ideas are proposed, ruthlessly dismantled, and rebuilt until they reach mathematical convergence.
+            </p>
+            <ul class="versus-list">
+              <li>
+                <div class="versus-icon" style="background: #b7dbb8; color: #1c5421;">✓</div>
+                <div><strong>Active Fallacy Hunting:</strong> Critics explicitly tag <code>[FALLACY] Sunk Cost</code>, <code>[FALLACY] Survivorship Bias</code>, etc.</div>
+              </li>
+              <li>
+                <div class="versus-icon" style="background: #b7dbb8; color: #1c5421;">✓</div>
+                <div><strong>Mathematical Convergence:</strong> Debates loop automatically until Severity Score &le; 3 and Confidence &gt; 85%.</div>
+              </li>
+              <li>
+                <div class="versus-icon" style="background: #b7dbb8; color: #1c5421;">✓</div>
+                <div><strong>Zero API Token Costs:</strong> Powered by persistent browser sessions in DeepSeek, Qwen, and GLM.</div>
+              </li>
+            </ul>
           </div>
         </div>
       </div>
+    </section>
 
-    </div>
+    <!-- ─────────────────────────────────────────────────────────────
+         CHAPTER II: THE FOUR DELIBERATION WORKFLOWS
+    ───────────────────────────────────────────────────────────── -->
+    <section class="workflows-section" id="workflows">
+      <div class="container">
+        <div class="section-header">
+          <div class="eyebrow">Tactical Formations</div>
+          <h2>The Four Deliberation Modes</h2>
+          <p>
+            Choose the orchestration paradigm suited for your problem. From high-stakes debates to Socratic mentoring.
+          </p>
+        </div>
 
-    <!-- Drifting Sunlight & Shadow Canvas -->
-    <canvas id="shade" width="64" height="36"></canvas>
-  </main>
+        <!-- Workflow Tabs -->
+        <div class="workflow-tabs">
+          <button class="tab-btn active" data-tab="debate">⚔️ Mode I: The Debate</button>
+          <button class="tab-btn" data-tab="swarm">🤝 Mode II: The Swarm</button>
+          <button class="tab-btn" data-tab="crucible">✨ Mode III: The Crucible</button>
+          <button class="tab-btn" data-tab="socratic">🧭 Mode IV: The Socratic</button>
+        </div>
+
+        <!-- Workflow Interactive Display -->
+        <div class="workflow-display" id="workflowDisplay">
+          <div class="workflow-info">
+            <div class="mono-tag" id="wfTag" style="color: var(--accent);">ADVERSARIAL CONVERGENCE LOOP</div>
+            <h3 id="wfTitle">The Adversarial Debate</h3>
+            <p id="wfDesc">
+              A visionary Proposer puts forward a strategy. A ruthless Critic hunts for architectural flaws and logical fallacies. If severity remains high, the Proposer must adapt. Once convergence metrics are met, a Synthesizer builds the executive roadmap.
+            </p>
+            <div class="steps-chain" id="wfSteps">
+              <div class="step-item">
+                <span class="step-num">1</span>
+                <div><strong>DeepSeek R1 (Proposer):</strong> Formulates visionary thesis with confidence score.</div>
+              </div>
+              <div class="step-item">
+                <span class="step-num">2</span>
+                <div><strong>Qwen 2.5 (Critic):</strong> Flags fallacies and assigns severity score (1-100).</div>
+              </div>
+              <div class="step-item">
+                <span class="step-num">3</span>
+                <div><strong>GLM-4 (Synthesizer):</strong> Produces finalized executive summary and action items.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Live Transcript Terminal Simulator -->
+          <div class="transcript-box" id="wfTranscript">
+            <div style="margin-bottom: 16px;">
+              <span class="tr-role tr-prop">Proposer · Turn 1</span>
+              <div>"Propose introducing dynamic pricing tiered by behavioral loyalty metrics to increase customer retention..."</div>
+            </div>
+            <div style="margin-bottom: 16px;">
+              <span class="tr-role tr-crit">Critic · Turn 1</span>
+              <div>"[FALLACY: Survivorship Bias] The proposal assumes top-decile buyers represent the general population. Penalty risk will trigger a 34% churn spike."</div>
+            </div>
+            <div>
+              <span class="tr-role tr-synth">Synthesizer · Convergence</span>
+              <div>"Executive Summary: Adopt non-punitive tiering. Reward frequency over total spend, insulating against churn while retaining margin."</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─────────────────────────────────────────────────────────────
+         CHAPTER III: ZERO-COST ARCHITECTURE
+    ───────────────────────────────────────────────────────────── -->
+    <section class="arch-section" id="architecture">
+      <div class="container">
+        <div class="section-header">
+          <div class="eyebrow">Engineering Rigor</div>
+          <h2>Under the Hood</h2>
+          <p>
+            ThinkTank is not another wrapper around OpenAI API credits. It is a full-fledged automation and vector synthesis runtime.
+          </p>
+        </div>
+
+        <div class="arch-grid">
+          <!-- Card 1 -->
+          <div class="arch-card">
+            <div>
+              <div class="arch-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                  <line x1="8" y1="21" x2="16" y2="21"/>
+                  <line x1="12" y1="17" x2="12" y2="21"/>
+                </svg>
+              </div>
+              <h3>Stealth Browser Engine</h3>
+              <p>
+                Powered by Playwright and <code>playwright-stealth</code>, ThinkTank launches persistent Chromium contexts that store your active sessions securely on your local disk. Zero API keys. Zero metered token consumption.
+              </p>
+            </div>
+            <div class="arch-footer">
+              FILE: <code>backend/automation.py</code>
+            </div>
+          </div>
+
+          <!-- Card 2 -->
+          <div class="arch-card">
+            <div>
+              <div class="arch-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  <line x1="16" y1="13" x2="8" y2="13"/>
+                  <line x1="16" y1="17" x2="8" y2="17"/>
+                  <polyline points="10 9 9 9 8 9"/>
+                </svg>
+              </div>
+              <h3>Self-Healing JSON Engine</h3>
+              <p>
+                Consumer web portals love returning conversational fluff. ThinkTank forces responses into <code>&lt;THINK_JSON&gt;</code> tags, repairs malformed syntax with <code>json-repair</code>, and fires automated retry turns if validation fails.
+              </p>
+            </div>
+            <div class="arch-footer">
+              FILE: <code>backend/json_utils.py</code>
+            </div>
+          </div>
+
+          <!-- Card 3 -->
+          <div class="arch-card">
+            <div>
+              <div class="arch-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <ellipse cx="12" cy="5" rx="9" ry="3"/>
+                  <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+                  <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+                </svg>
+              </div>
+              <h3>ChromaDB Knowledge RAG</h3>
+              <p>
+                Upload PDF strategy guides, books, and dossiers. PyMuPDF strips front/back matter noise, chunks text semantically, and stores embeddings in ChromaDB. Models are required to provide page-level citations: <code>[Book, Page X]</code>.
+              </p>
+            </div>
+            <div class="arch-footer">
+              FILE: <code>backend/memory.py</code>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─────────────────────────────────────────────────────────────
+         CHAPTER IV: THE CEO DIRECTIVE (HUMAN IN THE LOOP)
+    ───────────────────────────────────────────────────────────── -->
+    <section class="human-section">
+      <div class="container">
+        <div class="human-banner">
+          <div>
+            <div class="mono-tag" style="color: var(--accent);">CO-PILOT REVIEW PROTOCOL</div>
+            <h2>The CEO Directive</h2>
+            <p>
+              Autonomous loops are dangerous without executive oversight. With ThinkTank's Co-Pilot Mode enabled, the async coroutine suspends after each turn, allowing you to inspect arguments, inject counter-instructions, or steer the debate.
+            </p>
+            <div style="display: flex; gap: 14px;">
+              <div class="step-num" style="background: var(--accent);">!</div>
+              <div style="font-size: 14.5px;">
+                Directives are injected dynamically into the next prompt turn as a prioritized <strong>CEO Directive</strong>.
+              </div>
+            </div>
+          </div>
+
+          <!-- Directive Mockup -->
+          <div class="directive-card">
+            <span class="directive-badge">Real-Time WebSocket Interjection</span>
+            <div class="directive-quote">
+              "🚨 CEO DIRECTIVE: Pivot away from discount tiering. The company cannot sacrifice gross margins. Explore experiential utility instead."
+            </div>
+            <div style="font-size: 12px; color: #a89f8c; margin-top: 12px;">
+              Status: Coroutine paused &bull; Awaiting Executive Confirmation &bull; Next Turn: Synthesizer
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─────────────────────────────────────────────────────────────
+         CHAPTER V: QUICKSTART & DEPLOYMENT
+    ───────────────────────────────────────────────────────────── -->
+    <section class="quickstart-section" id="quickstart">
+      <div class="container">
+        <div class="section-header">
+          <div class="eyebrow">Local Deployment</div>
+          <h2>Ready in 60 Seconds</h2>
+          <p>
+            Clone, activate your virtual environment, and run the Windows Proactor-safe server.
+          </p>
+        </div>
+
+        <div class="terminal-window">
+          <div class="term-header">
+            <div class="term-dots">
+              <div class="term-dot" style="background: #e06c75;"></div>
+              <div class="term-dot" style="background: #e5c07b;"></div>
+              <div class="term-dot" style="background: #98c379;"></div>
+            </div>
+            <div class="mono-tag" style="color: #7c6f64;">BASH / POWERSHELL</div>
+            <button class="term-btn" id="copyAllBtn">Copy All</button>
+          </div>
+          <div class="term-body">
+            <div class="term-line">
+              <span><span class="term-comment"># 1. Clone the repository</span><br><span class="term-cmd">git clone https://github.com/Mackming/thinktank.git && cd thinktank</span></span>
+            </div>
+            <div class="term-line" style="margin-top: 12px;">
+              <span><span class="term-comment"># 2. Setup backend virtual environment & install requirements</span><br><span class="term-cmd">cd backend && python -m venv venv && .\venv\Scripts\Activate.ps1<br>pip install -r requirements.txt && playwright install chromium</span></span>
+            </div>
+            <div class="term-line" style="margin-top: 12px;">
+              <span><span class="term-comment"># 3. Start the backend runtime</span><br><span class="term-cmd">python run.py</span></span>
+            </div>
+            <div class="term-line" style="margin-top: 12px;">
+              <span><span class="term-comment"># 4. In a second terminal, start the React 19 UI</span><br><span class="term-cmd">cd ../frontend && npm install && npm run dev</span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─────────────────────────────────────────────────────────────
+         COLOPHON & FOOTER
+    ───────────────────────────────────────────────────────────── -->
+    <footer class="site-footer">
+      <div class="container">
+        <div class="footer-seal">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="m4.93 4.93 4.24 4.24"/>
+            <path d="m14.83 9.17 4.24-4.24"/>
+            <path d="m14.83 14.83 4.24 4.24"/>
+            <path d="m9.17 14.83-4.24 4.24"/>
+            <circle cx="12" cy="12" r="4"/>
+          </svg>
+        </div>
+        <h3 style="font-size: 28px; margin-bottom: 8px;">ThinkTank</h3>
+        <p class="serif-text" style="font-size: 15px; color: #5a5241;">
+          The Autonomous Multi-Agent Deliberation Chamber.
+        </p>
+
+        <div class="footer-links">
+          <a href="#arena">The Arena</a>
+          <a href="#fallacy">Philosophy</a>
+          <a href="#workflows">Workflows</a>
+          <a href="#architecture">Architecture</a>
+          <a href="https://github.com/Mackming/thinktank" target="_blank">GitHub Repository</a>
+        </div>
+
+        <p class="footer-credit">
+          Crafted with editorial care, mathematical wave physics, and zero marketing slop. Released under the MIT Open Source License.
+        </p>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- Ambient Light/Drift Shade Canvas -->
+  <canvas id="shade" width="64" height="36"></canvas>
 
   <!-- Interactive Precision Cursor -->
   <div id="ping"></div>
@@ -554,76 +1149,30 @@
 
   <script>
     // ─────────────────────────────────────────────────────────────
-    // ThinkTank Precision Animation & Simulation Engine
+    // ThinkTank Simulation & Wave Engine
     // ─────────────────────────────────────────────────────────────
-    
-    const frame = document.getElementById('frame');
-    const scene = document.getElementById('scene');
+    const heroScene = document.getElementById('heroScene');
     const wBack = document.getElementById('wBack');
     const wFront = document.getElementById('wFront');
     const vessel = document.getElementById('vessel');
-    const cloudA = document.getElementById('cloudA');
-    const t1 = document.getElementById('t1');
-    const t2 = document.getElementById('t2');
     const shadeCanvas = document.getElementById('shade');
     const cur = document.getElementById('cur');
     const ping = document.getElementById('ping');
 
-    // Layout configuration
-    const LAY = {
-      land: {
-        w: 1600, h: 900,
-        wave: { y0: 710, y1: 280, gap0: 1, gap1: 0.6 },
-        vessel: { x0: 1200, w0: 420, x1: 1360, w1: 160 },
-        cloud: { y: 140 }
-      },
-      port: {
-        w: 800, h: 1500,
-        wave: { y0: 1260, y1: 420, gap0: 1, gap1: 0.7 },
-        vessel: { x0: 500, w0: 360, x1: 620, w1: 140 },
-        cloud: { y: 100 }
-      }
-    };
-
-    // Wave layers (Back & Front)
     const BACK_WAVES = [
-      { dy: -90, a: 18, k: 1.5, v: 0.85, ph: 0, fill: 'var(--band)' },
-      { dy: -45, a: 21, k: 1.8, v: 1.1, ph: 1.6, fill: 'var(--paper)' }
+      { dy: -80, a: 18, k: 1.5, v: 0.85, ph: 0, fill: 'var(--band)' },
+      { dy: -40, a: 21, k: 1.8, v: 1.1, ph: 1.6, fill: 'var(--paper)' }
     ];
 
     const FRONT_WAVES = [
       { dy: 0, a: 24, k: 1.6, v: 1.25, ph: 3.1, fill: 'var(--band2)' },
-      { dy: 24, a: 16, k: 2.3, v: 0.95, ph: 4.3, span: [0.06, 0.44] },
-      { dy: 46, a: 20, k: 1.45, v: 1.35, ph: 0.6, fill: 'var(--paper)' },
-      { dy: 72, a: 14, k: 2.1, v: 1.15, ph: 5.0, span: [0.52, 0.96] },
-      { dy: 98, a: 22, k: 1.75, v: 1.2, ph: 2.2, fill: 'var(--paper)' },
-      { dy: 124, a: 13, k: 2.6, v: 0.95, ph: 1.1, span: [0.0, 0.62] },
-      { dy: 150, a: 19, k: 1.55, v: 1.05, ph: 3.8 }
+      { dy: 22, a: 16, k: 2.3, v: 0.95, ph: 4.3, span: [0.06, 0.44] },
+      { dy: 44, a: 20, k: 1.45, v: 1.35, ph: 0.6, fill: 'var(--paper)' },
+      { dy: 70, a: 14, k: 2.1, v: 1.15, ph: 5.0, span: [0.52, 0.96] },
+      { dy: 96, a: 22, k: 1.75, v: 1.2, ph: 2.2, fill: 'var(--paper)' }
     ];
 
-    // Math helpers
-    const clamp = (v, min = 0, max = 1) => Math.max(min, Math.min(max, v));
-    const mix = (a, b, t) => a + (b - a) * t;
-    const seg = (t, a, b) => clamp((t - a) / (b - a));
-    const io = (k) => k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
-    const out = (k) => 1 - Math.pow(1 - k, 3);
-    const back = (k) => 1 + 2.4 * Math.pow(k - 1, 3) + 1.4 * Math.pow(k - 1, 2);
-
-    // State
-    let W = 0, H = 0, portrait = false, L = LAY.land, S = 1, DX = 0, DY = 0;
-    let t0 = performance.now();
-    let p = 0, pFrom = 0, pTo = 0, pT0 = performance.now();
-    let wheelLocked = false;
-    const DUR = 2000;
-
-    // Mouse Tracking
-    let mx = -100, my = -100, cx = -100, cy = -100;
-    let isPressed = false;
-    let isHoverLink = false;
-
-    // ─────────────────────────────────────────────────────────────
-    // Setup Shade Canvas (Drifting window shadow)
-    // ─────────────────────────────────────────────────────────────
+    // Shade canvas setup
     const sCtx = shadeCanvas.getContext('2d');
     function initShade() {
       sCtx.fillStyle = '#ffffff';
@@ -636,8 +1185,7 @@
         [-10, 62, 74, 6, 4],
         [14, 78, 96, 16, 4],
         [40, 82, 118, 22, 3],
-        [78, 80, 140, 34, 5],
-        [-12, 74, 22, 56, 6]
+        [78, 80, 140, 34, 5]
       ];
       curves.forEach(([x0, y0, x1, y1, lw]) => {
         sCtx.lineWidth = lw;
@@ -649,124 +1197,96 @@
     }
     initShade();
 
-    // ─────────────────────────────────────────────────────────────
-    // Wave Math & SVG Path Construction
-    // ─────────────────────────────────────────────────────────────
-    function yAt(l, x, t, prog) {
-      const Wv = L.wave;
-      const base = mix(Wv.y0, Wv.y1, prog) + l.dy * mix(Wv.gap0, Wv.gap1, prog);
-      const amp = l.a * mix(1, 0.72, prog);
-      const freq = (2 * Math.PI / 1100) * l.k * (1 - 0.35 * prog);
+    function yAt(l, x, t) {
+      const base = 680 + l.dy;
+      const amp = l.a;
+      const freq = (2 * Math.PI / 1100) * l.k;
       return base + amp * Math.sin(freq * x + t * l.v + l.ph) + amp * 0.45 * Math.sin(freq * 2.3 * x - t * l.v * 0.7 + l.ph * 1.7);
     }
 
-    function buildWaveSvg(svgEl, layers, t, prog) {
-      const step = 22;
-      const xStart = -DX - 40;
-      const xEnd = L.w + DX + 40;
-      const yBottom = L.h + DY + 60;
+    function buildWaveSvg(svgEl, layers, t) {
+      const step = 24;
+      const xStart = -80;
+      const xEnd = 1680;
+      const yBottom = 1100;
       
       let html = '';
       layers.forEach(l => {
         let x0 = xStart;
         let x1 = xEnd;
         if (l.span) {
-          x0 = mix(xStart, xEnd, l.span[0]);
-          x1 = mix(xStart, xEnd, l.span[1]);
+          x0 = xStart + (xEnd - xStart) * l.span[0];
+          x1 = xStart + (xEnd - xStart) * l.span[1];
         }
 
-        let d = `M ${x0.toFixed(1)} ${yAt(l, x0, t, prog).toFixed(1)}`;
+        let d = `M ${x0.toFixed(1)} ${yAt(l, x0, t).toFixed(1)}`;
         for (let x = x0 + step; x <= x1; x += step) {
-          d += ` L ${x.toFixed(1)} ${yAt(l, x, t, prog).toFixed(1)}`;
+          d += ` L ${x.toFixed(1)} ${yAt(l, x, t).toFixed(1)}`;
         }
-        d += ` L ${x1.toFixed(1)} ${yAt(l, x1, t, prog).toFixed(1)}`;
+        d += ` L ${x1.toFixed(1)} ${yAt(l, x1, t).toFixed(1)}`;
 
         if (l.fill) {
-          d += ` L ${x1.toFixed(1)} ${yBottom.toFixed(1)} L ${x0.toFixed(1)} ${yBottom.toFixed(1)} Z`;
+          d += ` L ${x1.toFixed(1)} ${yBottom} L ${x0.toFixed(1)} ${yBottom} Z`;
         }
 
-        html += `<path d="${d}" fill="${l.fill || 'none'}" stroke="var(--line)" stroke-width="3.2" stroke-linecap="round"/>`;
+        html += `<path d="${d}" fill="${l.fill || 'none'}" stroke="var(--line)" stroke-width="3" stroke-linecap="round"/>`;
       });
       svgEl.innerHTML = html;
     }
 
-    // ─────────────────────────────────────────────────────────────
-    // Resize & Responsive Calculation
-    // ─────────────────────────────────────────────────────────────
-    function resize() {
-      W = frame.clientWidth;
-      H = frame.clientHeight;
-      portrait = H > W;
-      document.documentElement.classList.toggle('portrait', portrait);
-
-      L = portrait ? LAY.port : LAY.land;
-      S = Math.min(W / L.w, H / L.h);
-      const DW = W / S;
-      const DH = H / S;
-      DX = (DW - L.w) / 2;
-      DY = (DH - L.h) / 2;
-
-      scene.style.transform = `translate(${DX * S}px, ${DY * S}px) scale(${S})`;
+    // Responsive Scene Sizing
+    function resizeHero() {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      const scale = Math.min(w / 1600, h / 900);
+      heroScene.style.transform = `scale(${Math.max(scale, 0.65)})`;
     }
-    window.addEventListener('resize', resize);
-    resize();
+    window.addEventListener('resize', resizeHero);
+    resizeHero();
 
-    // ─────────────────────────────────────────────────────────────
-    // Scene Navigation & Triggering
-    // ─────────────────────────────────────────────────────────────
-    function go(to) {
-      if (to === pTo) return;
-      pFrom = p;
-      pTo = to;
-      pT0 = performance.now();
+    // Render loop
+    const t0 = performance.now();
+    let lastTime = performance.now();
+    let mx = -100, my = -100, cx = -100, cy = -100;
+    let isPressed = false;
+    let isHoverLink = false;
+
+    function render(now) {
+      const dt = Math.min((now - lastTime) / 1000, 0.05);
+      lastTime = now;
+      const t = (now - t0) / 1000;
+
+      // Cursor easing
+      cx += (mx - cx) * (1 - Math.exp(-dt * 24));
+      cy += (my - cy) * (1 - Math.exp(-dt * 24));
+      const curScale = isPressed ? 0.7 : (isHoverLink ? 1.4 : 1.0);
+      cur.style.transform = `translate3d(${cx}px, ${cy}px, 0) scale(${curScale})`;
+
+      // Ambient shade
+      shadeCanvas.style.transform = `translate(${Math.sin(t * 0.35) * 2}%, ${Math.cos(t * 0.27) * 1.5}%) rotate(${Math.sin(t * 0.22) * 0.6}deg)`;
+
+      // Waves
+      buildWaveSvg(wBack, BACK_WAVES, t);
+      buildWaveSvg(wFront, FRONT_WAVES, t);
+
+      // Vessel riding the front swell
+      const vx = 1260;
+      const vy = yAt(FRONT_WAVES[0], vx, t);
+      const slope = (yAt(FRONT_WAVES[0], vx + 60, t) - yAt(FRONT_WAVES[0], vx - 60, t)) / 120;
+      const rot = Math.atan(slope) * 57.3 * 0.85;
+
+      vessel.style.left = `${vx - 210}px`;
+      vessel.style.top = `${vy - 330}px`;
+      vessel.style.transform = `rotate(${rot.toFixed(2)}deg)`;
+
+      requestAnimationFrame(render);
     }
+    requestAnimationFrame(render);
 
-    document.querySelectorAll('[data-go]').forEach(el => {
-      el.addEventListener('click', (e) => {
-        e.preventDefault();
-        go(Number(el.getAttribute('data-go')));
-      });
-    });
-
-    window.addEventListener('wheel', (e) => {
-      if (wheelLocked) return;
-      if (e.deltaY > 12) {
-        go(1);
-        wheelLocked = true;
-        setTimeout(() => wheelLocked = false, 1200);
-      } else if (e.deltaY < -12) {
-        go(0);
-        wheelLocked = true;
-        setTimeout(() => wheelLocked = false, 1200);
-      }
-    }, { passive: true });
-
-    // Touch swipe support
-    let touchStartY = 0;
-    window.addEventListener('touchstart', e => { touchStartY = e.touches[0].clientY; }, { passive: true });
-    window.addEventListener('touchend', e => {
-      const diff = touchStartY - e.changedTouches[0].clientY;
-      if (diff > 40) go(1);
-      else if (diff < -40) go(0);
-    }, { passive: true });
-
-    // Copy command helper
-    const copyBtn = document.getElementById('copyBtn');
-    copyBtn.addEventListener('click', () => {
-      navigator.clipboard.writeText('git clone https://github.com/Mackming/thinktank.git && cd thinktank');
-      copyBtn.textContent = 'Copied!';
-      setTimeout(() => copyBtn.textContent = 'Copy Command', 2000);
-    });
-
-    // ─────────────────────────────────────────────────────────────
-    // Pointer & Cursor Loop
-    // ─────────────────────────────────────────────────────────────
+    // Pointer events
     if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
       document.documentElement.classList.add('fine');
-      window.addEventListener('pointermove', e => {
-        mx = e.clientX;
-        my = e.clientY;
-      });
+      window.addEventListener('pointermove', e => { mx = e.clientX; my = e.clientY; });
       window.addEventListener('pointerdown', e => {
         isPressed = true;
         ping.style.left = `${e.clientX}px`;
@@ -781,80 +1301,155 @@
         });
       });
       window.addEventListener('pointerup', () => { isPressed = false; });
-      
-      document.querySelectorAll('a, button, .mode-card').forEach(el => {
+      document.querySelectorAll('a, button, .versus-card, .arch-card, .tab-btn').forEach(el => {
         el.addEventListener('mouseenter', () => isHoverLink = true);
         el.addEventListener('mouseleave', () => isHoverLink = false);
       });
     }
 
     // ─────────────────────────────────────────────────────────────
-    // Main Render Loop (Computed Per Frame)
+    // Interactive Workflow Tab Switcher
     // ─────────────────────────────────────────────────────────────
-    let lastTime = performance.now();
-    function render(now) {
-      const dt = Math.min((now - lastTime) / 1000, 0.05);
-      lastTime = now;
-      const t = (now - t0) / 1000;
+    const WF_DATA = {
+      debate: {
+        tag: 'ADVERSARIAL CONVERGENCE LOOP',
+        title: 'The Adversarial Debate',
+        desc: 'A visionary Proposer puts forward a strategy. A ruthless Critic hunts for architectural flaws and logical fallacies. If severity remains high, the Proposer must adapt. Once convergence metrics are met, a Synthesizer builds the executive roadmap.',
+        steps: [
+          { num: '1', role: 'DeepSeek R1 (Proposer)', text: 'Formulates visionary thesis with confidence score.' },
+          { num: '2', role: 'Qwen 2.5 (Critic)', text: 'Flags fallacies and assigns severity score (1-100).' },
+          { num: '3', role: 'GLM-4 (Synthesizer)', text: 'Produces finalized executive summary and action items.' }
+        ],
+        transcript: `
+          <div style="margin-bottom: 16px;">
+            <span class="tr-role tr-prop">Proposer · Turn 1</span>
+            <div>"Propose introducing dynamic pricing tiered by behavioral loyalty metrics to increase customer retention..."</div>
+          </div>
+          <div style="margin-bottom: 16px;">
+            <span class="tr-role tr-crit">Critic · Turn 1</span>
+            <div>"[FALLACY: Survivorship Bias] The proposal assumes top-decile buyers represent the general population. Penalty risk will trigger a 34% churn spike."</div>
+          </div>
+          <div>
+            <span class="tr-role tr-synth">Synthesizer · Convergence</span>
+            <div>"Executive Summary: Adopt non-punitive tiering. Reward frequency over total spend, insulating against churn while retaining margin."</div>
+          </div>
+        `
+      },
+      swarm: {
+        tag: 'PARALLEL DECOMPOSITION',
+        title: 'The Parallel Swarm',
+        desc: 'Complex tasks are divided across all active frontier models simultaneously. Each model attacks the problem from a distinct domain angle before a master model consolidates their findings into a cohesive plan.',
+        steps: [
+          { num: '1', role: 'DeepSeek R1 (Worker 1)', text: 'Deep structural engineering and risk decomposition.' },
+          { num: '2', role: 'Qwen 2.5 (Worker 2)', text: 'Market positioning and user behavioral dynamics.' },
+          { num: '3', role: 'GLM-4 (Consolidator)', text: 'Merges all parallel angles into a single executive action plan.' }
+        ],
+        transcript: `
+          <div style="margin-bottom: 16px;">
+            <span class="tr-role tr-prop">Worker 1 · Angle Alpha</span>
+            <div>"Infrastructure analysis confirms caching latency drops 42% by colocation near vector stores."</div>
+          </div>
+          <div style="margin-bottom: 16px;">
+            <span class="tr-role tr-prop">Worker 2 · Angle Beta</span>
+            <div>"Economic modeling suggests self-hosted browser automation cuts cloud compute bills by $4,200/month."</div>
+          </div>
+          <div>
+            <span class="tr-role tr-synth">Merge Synthesizer</span>
+            <div>"Unified Roadmap: Colocate persistent Chromium profiles with SQLite storage; rollout Phase 1 testing immediately."</div>
+          </div>
+        `
+      },
+      crucible: {
+        tag: 'SEQUENTIAL REFINEMENT',
+        title: 'The Editorial Crucible',
+        desc: 'A sequential relay race for perfection. The Drafter creates the raw prose, the Editor cuts corporate fluff and sharpens logic, and the Polisher elevates tone and flow.',
+        steps: [
+          { num: '1', role: 'Drafter', text: 'Outputs complete first draft based on the master prompt.' },
+          { num: '2', role: 'Editor', text: 'Strips redundancies, eliminates passive voice, verifies structure.' },
+          { num: '3', role: 'Polisher', text: 'Applies final editorial shine and ensures brand tone consistency.' }
+        ],
+        transcript: `
+          <div style="margin-bottom: 16px;">
+            <span class="tr-role tr-prop">Drafter · Pass 1</span>
+            <div>"We aim to leverage automated multi-agent synergy to synergistically enhance customer experience..."</div>
+          </div>
+          <div style="margin-bottom: 16px;">
+            <span class="tr-role tr-crit">Editor · Pass 2</span>
+            <div>"Purged corporate buzzwords. Clarified value proposition: 'Automated council deliberates in parallel to eliminate single-agent errors.'"</div>
+          </div>
+          <div>
+            <span class="tr-role tr-synth">Polisher · Pass 3</span>
+            <div>"Final Copy: 'Where solitary models hallucinate, ThinkTank deliberates. Verifiable strategy through structured cross-examination.'"</div>
+          </div>
+        `
+      },
+      socratic: {
+        tag: 'PSYCHOLOGICAL INQUISITION',
+        title: 'The Socratic Mentor',
+        desc: 'Rather than answering immediately, the models act as your executive advisory board, asking sharp probing questions grounded in behavioral and philosophical frameworks.',
+        steps: [
+          { num: '1', role: 'First Principles Probe', text: 'Challenges the fundamental baseline premise of your strategy.' },
+          { num: '2', role: 'Inversion Question', text: 'Asks what factors would guarantee the complete failure of the venture.' },
+          { num: '3', role: 'Opportunity Cost Probe', text: 'Forces clarity on what must be discarded to succeed.' }
+        ],
+        transcript: `
+          <div style="margin-bottom: 16px;">
+            <span class="tr-role tr-prop">Coach · Turn 1</span>
+            <div>"Framework: First Principles. You claim customer acquisition is your hurdle. If distribution were zero-cost tomorrow, would retention survive?"</div>
+          </div>
+          <div style="margin-bottom: 16px;">
+            <span class="tr-role tr-crit">User Interjection</span>
+            <div>"No, our 30-day churn is still at 18%."</div>
+          </div>
+          <div>
+            <span class="tr-role tr-synth">Coach · Directive</span>
+            <div>"Then distribution is a distraction. The council redirects full focus onto onboarding ergonomics."</div>
+          </div>
+        `
+      }
+    };
 
-      // Transition interpolation
-      const k = seg(now, pT0, pT0 + DUR);
-      p = mix(pFrom, pTo, io(k));
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const wfTag = document.getElementById('wfTag');
+    const wfTitle = document.getElementById('wfTitle');
+    const wfDesc = document.getElementById('wfDesc');
+    const wfSteps = document.getElementById('wfSteps');
+    const wfTranscript = document.getElementById('wfTranscript');
 
-      // Cursor easing
-      cx += (mx - cx) * (1 - Math.exp(-dt * 24));
-      cy += (my - cy) * (1 - Math.exp(-dt * 24));
-      const curScale = isPressed ? 0.7 : (isHoverLink ? 1.4 : 1.0);
-      cur.style.transform = `translate3d(${cx}px, ${cy}px, 0) scale(${curScale})`;
+    tabBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        tabBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const key = btn.getAttribute('data-tab');
+        const data = WF_DATA[key];
+        if (!data) return;
 
-      // Ambient shade translation & rotation
-      shadeCanvas.style.transform = `translate(${Math.sin(t * 0.35) * 2.2}%, ${Math.cos(t * 0.27) * 1.6}%) rotate(${Math.sin(t * 0.22) * 0.8}deg)`;
+        wfTag.textContent = data.tag;
+        wfTitle.textContent = data.title;
+        wfDesc.textContent = data.desc;
+        wfTranscript.innerHTML = data.transcript;
 
-      // Render Waves
-      buildWaveSvg(wBack, BACK_WAVES, t, p);
-      buildWaveSvg(wFront, FRONT_WAVES, t, p);
+        let stepsHtml = '';
+        data.steps.forEach(s => {
+          stepsHtml += `
+            <div class="step-item">
+              <span class="step-num">${s.num}</span>
+              <div><strong>${s.role}:</strong> ${s.text}</div>
+            </div>
+          `;
+        });
+        wfSteps.innerHTML = stepsHtml;
+      });
+    });
 
-      // Cloud Motion
-      const cloudX = ((L.w * 0.75 - t * 18) % (L.w + 600)) - 300;
-      cloudA.style.transform = `translate3d(${cloudX}px, ${L.cloud.y}px, 0)`;
-      cloudA.style.opacity = (1 - seg(p, 0.3, 0.7)).toFixed(2);
-
-      // Vessel (The Astrolabe of Reason) Riding the Main Front Wave
-      const vw = mix(L.vessel.w0, L.vessel.w1, p);
-      const vx = mix(L.vessel.x0, L.vessel.x1, p);
-      const vy = yAt(FRONT_WAVES[0], vx, t, p);
-      
-      // Calculate Wave Slope for Realistic Physics Tilt
-      const slope = (yAt(FRONT_WAVES[0], vx + 60, t, p) - yAt(FRONT_WAVES[0], vx - 60, t, p)) / 120;
-      const rot = Math.atan(slope) * 57.3 * 0.85;
-
-      vessel.style.width = `${vw}px`;
-      vessel.style.height = `${vw}px`;
-      vessel.style.left = `${vx - vw / 2}px`;
-      vessel.style.top = `${vy - vw * 0.82}px`;
-      vessel.style.transform = `rotate(${rot.toFixed(2)}deg)`;
-      vessel.style.opacity = (1 - seg(p, 0.75, 0.95)).toFixed(2);
-
-      // Scene 1 Copy (t1) Submersion
-      const intro = out(seg(now, t0 + 200, t0 + 1100));
-      const t1Opacity = intro * (1 - seg(p, 0.5, 0.72));
-      const t1TranslateY = (1 - intro) * 26 - p * 50;
-      t1.style.opacity = t1Opacity.toFixed(2);
-      t1.style.transform = `translate3d(0, ${t1TranslateY.toFixed(1)}px, 0)`;
-      t1.style.pointerEvents = p > 0.15 ? 'none' : 'auto';
-
-      // Scene 2 Copy (t2) Reveal
-      const hk = seg(p, 0.42, 0.84);
-      const t2Opacity = Math.pow(hk, 1.8);
-      const t2TranslateY = mix(70, 0, out(hk));
-      t2.style.opacity = t2Opacity.toFixed(2);
-      t2.style.transform = `translate3d(0, ${t2TranslateY.toFixed(1)}px, 0)`;
-      t2.style.pointerEvents = p > 0.85 ? 'auto' : 'none';
-
-      requestAnimationFrame(render);
-    }
-    requestAnimationFrame(render);
-
+    // Copy commands button
+    const copyAllBtn = document.getElementById('copyAllBtn');
+    copyAllBtn.addEventListener('click', () => {
+      const code = `git clone https://github.com/Mackming/thinktank.git && cd thinktank\ncd backend && python -m venv venv && .\\venv\\Scripts\\Activate.ps1\npip install -r requirements.txt && playwright install chromium\npython run.py`;
+      navigator.clipboard.writeText(code);
+      copyAllBtn.textContent = 'Copied!';
+      setTimeout(() => copyAllBtn.textContent = 'Copy All', 2000);
+    });
   </script>
 </body>
 </html>
