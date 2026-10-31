@@ -32,25 +32,25 @@ By driving persistent, stealth browser sessions and enforcing strict JSON commun
 
 ```mermaid
 flowchart TD
-    User([User / CEO]) <-->|WebSockets & REST| UI[React 19 + Tailwind UI]
-    UI <--> Backend[FastAPI Orchestrator]
+    User(["User / CEO"]) <-->|WebSockets & REST| UI["React 19 + Tailwind UI"]
+    UI <--> Backend["FastAPI Orchestrator"]
 
-    subgraph Deliberation Engine
-        Backend --> Proposer[Proposer Agent]
-        Backend --> Critic[Critic Agent]
-        Backend --> Synthesizer[Synthesizer Agent]
+    subgraph Deliberation_Engine ["Deliberation Engine"]
+        Backend --> Proposer["Proposer Agent"]
+        Backend --> Critic["Critic Agent"]
+        Backend --> Synthesizer["Synthesizer Agent"]
     end
 
-    subgraph Knowledge & Persistence
-        Backend <--> SQLite[(SQLite / Sessions & Spaces)]
-        Backend <--> Chroma[(ChromaDB / Vector Memory)]
-        PDFs[PDF Dossiers] --> PDFCleaner[PDF Cleaner & Chunker] --> Chroma
+    subgraph Knowledge_Persistence ["Knowledge & Persistence"]
+        Backend <--> SQLite[("SQLite / Sessions & Spaces")]
+        Backend <--> Chroma[("ChromaDB / Vector Memory")]
+        PDFs["PDF Dossiers"] --> PDFCleaner["PDF Cleaner & Chunker"] --> Chroma
     end
 
-    subgraph Browser Engine (Playwright Stealth)
-        Proposer <--> DeepSeek[chat.deepseek.com]
-        Critic <--> Qwen[chat.qwen.ai]
-        Synthesizer <--> GLM[chat.z.ai]
+    subgraph Browser_Engine ["Browser Engine (Playwright Stealth)"]
+        Proposer <--> DeepSeek["chat.deepseek.com"]
+        Critic <--> Qwen["chat.qwen.ai"]
+        Synthesizer <--> GLM["chat.z.ai"]
     end
 ```
 
