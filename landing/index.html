@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ThinkTank — Autonomous Council of Frontier AI Minds</title>
+  <meta name="description" content="Autonomous multi-agent deliberation platform orchestrating frontier AI models (DeepSeek, Qwen, GLM) through stealth browser automation, structured debate, and local vector RAG.">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23201c15' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='10'/><path d='m4.93 4.93 4.24 4.24'/><path d='m14.83 9.17 4.24-4.24'/><path d='m14.83 14.83 4.24 4.24'/><path d='m9.17 14.83-4.24 4.24'/><circle cx='12' cy='12' r='4'/></svg>">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Goudy+Bookletter+1911&family=Sorts+Mill+Goudy&family=Josefin+Sans:wght@600;700&family=Open+Sans:wght@600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --paper: #e6e0cf;
+      --ink: #201c15;
+      --line: #16130e;
+      --band: #d7d2c2;
+      --band2: #dcd7c7;
+      --accent: #9e3223;
+      --card-bg: #efeadd;
+      --ring: 40px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      height: 100%;
+      background: var(--paper);
+      overflow: hidden;
+      color: var(--ink);
+      -webkit-font-smoothing: antialiased;
+      font-family: "Open Sans", sans-serif;
+    }
+    html.fine, html.fine * { cursor: none !important; }
+    a { color: inherit; text-decoration: none; }
+
+    /* Physical Frame */
+    .frame {
+      position: fixed;
+      inset: 14px;
+      border-radius: 34px;
+      overflow: hidden;
+      background: var(--paper);
+      isolation: isolate;
+    }
+    .frame::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border: 6px solid var(--line);
+      border-radius: 34px;
+      pointer-events: none;
+      z-index: 40;
+    }
+
+    /* Ambient Drift Shade */
+    #shade {
+      position: absolute;
+      left: -12%;
+      top: -12%;
+      width: 124%;
+      height: 124%;
+      mix-blend-mode: multiply;
+      opacity: .32;
+      pointer-events: none;
+      z-index: 35;
+      will-change: transform;
+    }
+
+    /* Canvas Scene Coordinate System */
+    #scene {
+      position: absolute;
+      left: 0;
+      top: 0;
+      transform-origin: 0 0;
+      width: 1600px;
+      height: 900px;
+    }
+    #scene > * { position: absolute; }
+    svg.w { left: 0; top: 0; overflow: visible; pointer-events: none; }
+    svg.w path { vector-effect: none; }
+
+    /* Sprites & Vessels */
+    .spr { will-change: transform; }
+    #vessel { transform-origin: 50% 100%; }
+    
+    /* Typography & Copy */
+    h1, h2 {
+      font-family: "Goudy Bookletter 1911", "Sorts Mill Goudy", serif;
+      font-weight: 400;
+      text-transform: uppercase;
+      letter-spacing: -.045em;
+    }
+    
+    .eb {
+      font: 400 24px/1 "Sorts Mill Goudy", serif;
+      letter-spacing: .22em;
+      text-transform: uppercase;
+      color: var(--line);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .eb::before, .eb::after {
+      content: "";
+      display: inline-block;
+      width: 28px;
+      height: 1px;
+      background: var(--line);
+      opacity: 0.5;
+    }
+
+    /* Scene 1: The Arena */
+    .t1 {
+      left: 140px;
+      top: 250px;
+      width: 720px;
+      z-index: 10;
+      will-change: transform, opacity;
+    }
+    h1 {
+      font-size: 84px;
+      line-height: .92;
+      margin-top: 24px;
+      color: var(--line);
+    }
+    .t1 p {
+      margin-top: 24px;
+      font-size: 16px;
+      line-height: 1.6;
+      max-width: 540px;
+      color: #3b3529;
+      font-family: "Sorts Mill Goudy", serif;
+    }
+
+    /* Physical Pill Buttons */
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      position: relative;
+      font: 700 16px/1 "Josefin Sans", sans-serif;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      border: 3px solid var(--line);
+      border-radius: 999px;
+      background: #ece7d8;
+      box-shadow: 0 7px 0 -1px var(--paper), 0 7px 0 2px var(--line);
+      transition: transform .22s cubic-bezier(.2,1,.3,1), box-shadow .22s cubic-bezier(.2,1,.3,1), background .2s;
+      cursor: pointer;
+      user-select: none;
+    }
+    .pill:hover {
+      transform: translateY(3px);
+      box-shadow: 0 4px 0 -1px var(--paper), 0 4px 0 2px var(--line);
+      background: #f4efe1;
+    }
+    .pill:active {
+      transform: translateY(6px);
+      box-shadow: 0 1px 0 -1px var(--paper), 0 1px 0 2px var(--line);
+    }
+    .pill.accent {
+      background: var(--accent);
+      color: #faf6ec;
+      border-color: var(--line);
+    }
+    .pill.accent:hover {
+      background: #b53d2d;
+    }
+    .t1 .pill {
+      margin-top: 36px;
+      padding: 19px 48px 16px;
+    }
+
+    /* Scene 2: The Chamber of Articles */
+    .t2 {
+      left: 120px;
+      top: 90px;
+      width: 1360px;
+      z-index: 25;
+      opacity: 0;
+      pointer-events: none;
+      will-change: transform, opacity;
+    }
+    h2 {
+      font-size: 68px;
+      line-height: .96;
+      color: var(--line);
+    }
+    .t2-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      padding-bottom: 24px;
+      border-bottom: 2px solid rgba(22,19,14,0.15);
+      margin-bottom: 30px;
+    }
+    .t2-header p {
+      max-width: 560px;
+      font-size: 15px;
+      line-height: 1.6;
+      color: #433c2e;
+      font-family: "Sorts Mill Goudy", serif;
+    }
+
+    /* Interactive Deliberation Matrix Cards */
+    .modes-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    .mode-card {
+      background: var(--card-bg);
+      border: 2px solid var(--line);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 4px 0 var(--line);
+      transition: all 0.2s ease;
+      position: relative;
+    }
+    .mode-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 0 var(--line);
+    }
+    .mode-card .badge {
+      font: 700 11px/1 "JetBrains Mono", monospace;
+      text-transform: uppercase;
+      letter-spacing: .15em;
+      padding: 4px 8px;
+      border: 1.5px solid var(--line);
+      border-radius: 4px;
+      display: inline-block;
+      margin-bottom: 14px;
+      background: var(--paper);
+    }
+    .mode-card h3 {
+      font: 400 24px/1.1 "Goudy Bookletter 1911", serif;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      color: var(--line);
+    }
+    .mode-card p {
+      font-size: 13px;
+      line-height: 1.55;
+      color: #4a4233;
+    }
+
+    /* Terminal & Quickstart Bar */
+    .dock-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #1e1b15;
+      color: #ede7d6;
+      border-radius: 18px;
+      padding: 16px 28px;
+      border: 3px solid var(--line);
+      box-shadow: 0 6px 0 -1px var(--paper), 0 6px 0 2px var(--line);
+    }
+    .dock-term {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 13px;
+    }
+    .term-prompt { color: #8a8270; user-select: none; }
+    .term-code { color: #e7dfca; font-weight: 500; }
+    .copy-btn {
+      background: #2b271f;
+      border: 1px solid #484133;
+      color: #dcd4be;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 11px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .copy-btn:hover { background: #3d372c; color: #fff; }
+
+    /* Chrome: Navigation & Logo */
+    .logo {
+      position: absolute;
+      left: 6.6%;
+      top: 54px;
+      z-index: 30;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font: 400 32px/1 "Goudy Bookletter 1911", serif;
+      letter-spacing: -.03em;
+      color: var(--line);
+      user-select: none;
+    }
+    .logo svg { width: 30px; height: 30px; }
+
+    nav {
+      position: absolute;
+      right: 6.6%;
+      top: 58px;
+      z-index: 30;
+      display: flex;
+      align-items: center;
+      gap: clamp(24px, 4vw, 54px);
+    }
+    nav a {
+      position: relative;
+      font: 700 13px/1 "Open Sans", sans-serif;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      color: var(--line);
+      padding: 8px 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    nav a::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      bottom: 2px;
+      width: 100%;
+      height: 2px;
+      background: var(--line);
+      transform: scaleX(0);
+      transform-origin: 100% 50%;
+      transition: transform .25s ease;
+    }
+    nav a:hover::after {
+      transform: scaleX(1);
+      transform-origin: 0 50%;
+    }
+
+    /* Precision Ring Cursor */
+    #cur, #ping {
+      position: fixed;
+      left: 0;
+      top: 0;
+      z-index: 60;
+      pointer-events: none;
+      border-radius: 50%;
+      display: none;
+    }
+    html.fine #cur, html.fine #ping { display: block; }
+    #cur {
+      width: var(--ring);
+      height: var(--ring);
+      margin: calc(var(--ring) / -2);
+      border: 3.5px solid var(--line);
+      transition: width .2s, height .2s, border-color .2s;
+    }
+    #ping {
+      width: var(--ring);
+      height: var(--ring);
+      margin: calc(var(--ring) / -2);
+      border: 1.5px solid var(--line);
+      opacity: 0;
+    }
+
+    /* Responsiveness & Portrait Layout */
+    .portrait .t1 { left: 60px; top: 160px; width: 680px; }
+    .portrait h1 { font-size: 78px; }
+    .portrait .t2 { left: 40px; top: 70px; width: 720px; }
+    .portrait .modes-grid { grid-template-columns: repeat(2, 1fr); gap: 14px; }
+    .portrait h2 { font-size: 56px; }
+
+    @media (max-width: 768px) {
+      .frame, .frame::after { border-radius: 20px; }
+      .frame { inset: 8px; }
+      .logo { top: 24px; left: 24px; font-size: 24px; }
+      .logo svg { width: 22px; height: 22px; }
+      nav { top: 28px; right: 24px; gap: 16px; }
+      nav a { font-size: 11px; letter-spacing: .08em; }
+      nav a:nth-child(2) { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Physical Frame Container -->
+  <main class="frame" id="frame">
+    
+    <!-- Logo & Brand Mark -->
+    <a href="#" class="logo" data-go="0">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <path d="m4.93 4.93 4.24 4.24"/>
+        <path d="m14.83 9.17 4.24-4.24"/>
+        <path d="m14.83 14.83 4.24 4.24"/>
+        <path d="m9.17 14.83-4.24 4.24"/>
+        <circle cx="12" cy="12" r="4"/>
+      </svg>
+      <span>ThinkTank</span>
+    </a>
+
+    <!-- Top Navigation -->
+    <nav>
+      <a href="#" data-go="0">The Horizon</a>
+      <a href="#" data-go="1">The Articles</a>
+      <a href="https://github.com/Mackming/thinktank" target="_blank" rel="noopener noreferrer">
+        <span>GitHub</span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="7" y1="17" x2="17" y2="7"></line>
+          <polyline points="7 7 17 7 17 17"></polyline>
+        </svg>
+      </a>
+    </nav>
+
+    <!-- Canvas Simulation Scene -->
+    <div id="scene">
+      
+      <!-- Cloud Drift -->
+      <div class="spr" id="cloudA" style="top: 140px; opacity: 0.9;">
+        <svg viewBox="0 0 300 80" width="300" height="80">
+          <path fill="#d3cebe" d="M0 79c14-3 26-3 38-10-4-16 10-30 30-26 6-22 42-34 62-16 16-12 42-6 50 14 10-2 18 2 22 8 24 22 66 26 98 30z"/>
+        </svg>
+      </div>
+
+      <!-- Back Waves (Behind the Vessel) -->
+      <svg class="w" id="wBack"></svg>
+
+      <!-- Scene 1: The Arena Copy -->
+      <div class="t1" id="t1">
+        <div class="eb">The Council of Three · Zero-Cost AI</div>
+        <h1>The Arena of<br>Rival Minds</h1>
+        <p>
+          Where solitary models hallucinate in isolation, ThinkTank orchestrates cross-examination. DeepSeek, Qwen, and GLM locked in structured dialectics to forge verifiable strategy.
+        </p>
+        <div style="display: flex; gap: 16px; align-items: center;">
+          <a href="#" class="pill accent" data-go="1">
+            <span>Summon the Council</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </a>
+          <a href="https://github.com/Mackming/thinktank" target="_blank" class="pill" style="padding: 19px 34px 16px;">
+            <span>⭐ Star on GitHub</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- The Astrolabe of Reason (Vessel that rides the waves) -->
+      <div class="spr" id="vessel">
+        <svg width="420" height="420" viewBox="0 0 420 420" fill="none" stroke="var(--line)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <!-- Outer Astrolabe Ring -->
+          <circle cx="210" cy="210" r="180" stroke-width="4.5" fill="#dfd9c7"/>
+          <circle cx="210" cy="210" r="168" stroke-dasharray="4 8" stroke-width="1.8"/>
+          
+          <!-- Dialectic Compass Crossbars -->
+          <line x1="210" y1="30" x2="210" y2="390" stroke-width="2.5"/>
+          <line x1="30" y1="210" x2="390" y2="210" stroke-width="2.5"/>
+          <circle cx="210" cy="210" r="120" stroke-dasharray="2 6"/>
+          
+          <!-- The Three Frontier Pillars (DeepSeek, Qwen, GLM) -->
+          <!-- North-West: DeepSeek R1 -->
+          <g transform="translate(130, 130)">
+            <circle cx="0" cy="0" r="26" fill="#ece7d8" stroke-width="3"/>
+            <text x="0" y="5" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="700" fill="var(--line)">R1</text>
+          </g>
+          <!-- North-East: Qwen 2.5 -->
+          <g transform="translate(290, 130)">
+            <circle cx="0" cy="0" r="26" fill="#ece7d8" stroke-width="3"/>
+            <text x="0" y="5" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="700" fill="var(--line)">QW</text>
+          </g>
+          <!-- South: GLM 4 -->
+          <g transform="translate(210, 310)">
+            <circle cx="0" cy="0" r="26" fill="#ece7d8" stroke-width="3"/>
+            <text x="0" y="5" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="700" fill="var(--line)">GLM</text>
+          </g>
+
+          <!-- Central Core / Synthesis Dial -->
+          <circle cx="210" cy="210" r="48" fill="#e8dfcc" stroke-width="3.5"/>
+          <circle cx="210" cy="210" r="24" fill="var(--accent)" stroke="var(--line)" stroke-width="2.5"/>
+          <circle cx="210" cy="210" r="6" fill="#faf6ec"/>
+          
+          <!-- Decorative Celestial Arcs -->
+          <path d="M120 210 A90 90 0 0 1 300 210" stroke-width="1.8" stroke-dasharray="6 4"/>
+          <path d="M140 280 A80 80 0 0 1 280 280" stroke-width="1.5"/>
+        </svg>
+      </div>
+
+      <!-- Front Waves (Rising tide that submerges Scene 1 into Scene 2) -->
+      <svg class="w" id="wFront"></svg>
+
+      <!-- Scene 2: The Articles of Deliberation -->
+      <div class="t2" id="t2">
+        <div class="t2-header">
+          <div>
+            <div class="eb" style="font-size: 19px;">The Articles of Deliberation</div>
+            <h2 style="margin-top: 10px;">The Engine of Reason</h2>
+          </div>
+          <p>
+            Autonomous browser automation commands live chat portals in parallel, enforcing strict JSON schemas, logical fallacy detection, and ChromaDB vector retrieval.
+          </p>
+        </div>
+
+        <!-- 4 Deliberation Modes Grid -->
+        <div class="modes-grid">
+          <div class="mode-card">
+            <span class="badge" style="color: #9e3223; border-color: #9e3223;">Mode I</span>
+            <h3>The Debate</h3>
+            <p>Proposer defends visionary strategy while Critic hunts logical fallacies (Sunk Cost, Survivorship Bias) until the confidence convergence metric breaks.</p>
+          </div>
+          <div class="mode-card">
+            <span class="badge">Mode II</span>
+            <h3>The Swarm</h3>
+            <p>Parallel problem decomposition. Models analyze distinct angles concurrently and submit structured findings for synthesis into an executive action plan.</p>
+          </div>
+          <div class="mode-card">
+            <span class="badge">Mode III</span>
+            <h3>The Crucible</h3>
+            <p>Sequential refinement pipeline passing raw drafts through Drafter ➔ Editor ➔ Polisher, continuously purging hallucinations.</p>
+          </div>
+          <div class="mode-card">
+            <span class="badge">Mode IV</span>
+            <h3>The Socratic</h3>
+            <p>An interactive council of mentors probing your assumptions through established psychological and philosophical frameworks.</p>
+          </div>
+        </div>
+
+        <!-- Terminal Quickstart & Actions -->
+        <div class="dock-bar">
+          <div class="dock-term">
+            <span class="term-prompt">$</span>
+            <span class="term-code" id="termText">git clone https://github.com/Mackming/thinktank.git && cd thinktank</span>
+            <button class="copy-btn" id="copyBtn">Copy Command</button>
+          </div>
+          <div style="display: flex; gap: 14px;">
+            <a href="https://github.com/Mackming/thinktank" target="_blank" class="pill accent" style="padding: 12px 28px; font-size: 14px;">
+              <span>Deploy Local Engine</span>
+            </a>
+            <a href="#" class="pill" data-go="0" style="padding: 12px 24px; font-size: 14px;">
+              <span>Return to Horizon</span>
+            </a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Drifting Sunlight & Shadow Canvas -->
+    <canvas id="shade" width="64" height="36"></canvas>
+  </main>
+
+  <!-- Interactive Precision Cursor -->
+  <div id="ping"></div>
+  <div id="cur"></div>
+
+  <script>
+    // ─────────────────────────────────────────────────────────────
+    // ThinkTank Precision Animation & Simulation Engine
+    // ─────────────────────────────────────────────────────────────
+    
+    const frame = document.getElementById('frame');
+    const scene = document.getElementById('scene');
+    const wBack = document.getElementById('wBack');
+    const wFront = document.getElementById('wFront');
+    const vessel = document.getElementById('vessel');
+    const cloudA = document.getElementById('cloudA');
+    const t1 = document.getElementById('t1');
+    const t2 = document.getElementById('t2');
+    const shadeCanvas = document.getElementById('shade');
+    const cur = document.getElementById('cur');
+    const ping = document.getElementById('ping');
+
+    // Layout configuration
+    const LAY = {
+      land: {
+        w: 1600, h: 900,
+        wave: { y0: 710, y1: 280, gap0: 1, gap1: 0.6 },
+        vessel: { x0: 1200, w0: 420, x1: 1360, w1: 160 },
+        cloud: { y: 140 }
+      },
+      port: {
+        w: 800, h: 1500,
+        wave: { y0: 1260, y1: 420, gap0: 1, gap1: 0.7 },
+        vessel: { x0: 500, w0: 360, x1: 620, w1: 140 },
+        cloud: { y: 100 }
+      }
+    };
+
+    // Wave layers (Back & Front)
+    const BACK_WAVES = [
+      { dy: -90, a: 18, k: 1.5, v: 0.85, ph: 0, fill: 'var(--band)' },
+      { dy: -45, a: 21, k: 1.8, v: 1.1, ph: 1.6, fill: 'var(--paper)' }
+    ];
+
+    const FRONT_WAVES = [
+      { dy: 0, a: 24, k: 1.6, v: 1.25, ph: 3.1, fill: 'var(--band2)' },
+      { dy: 24, a: 16, k: 2.3, v: 0.95, ph: 4.3, span: [0.06, 0.44] },
+      { dy: 46, a: 20, k: 1.45, v: 1.35, ph: 0.6, fill: 'var(--paper)' },
+      { dy: 72, a: 14, k: 2.1, v: 1.15, ph: 5.0, span: [0.52, 0.96] },
+      { dy: 98, a: 22, k: 1.75, v: 1.2, ph: 2.2, fill: 'var(--paper)' },
+      { dy: 124, a: 13, k: 2.6, v: 0.95, ph: 1.1, span: [0.0, 0.62] },
+      { dy: 150, a: 19, k: 1.55, v: 1.05, ph: 3.8 }
+    ];
+
+    // Math helpers
+    const clamp = (v, min = 0, max = 1) => Math.max(min, Math.min(max, v));
+    const mix = (a, b, t) => a + (b - a) * t;
+    const seg = (t, a, b) => clamp((t - a) / (b - a));
+    const io = (k) => k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+    const out = (k) => 1 - Math.pow(1 - k, 3);
+    const back = (k) => 1 + 2.4 * Math.pow(k - 1, 3) + 1.4 * Math.pow(k - 1, 2);
+
+    // State
+    let W = 0, H = 0, portrait = false, L = LAY.land, S = 1, DX = 0, DY = 0;
+    let t0 = performance.now();
+    let p = 0, pFrom = 0, pTo = 0, pT0 = performance.now();
+    let wheelLocked = false;
+    const DUR = 2000;
+
+    // Mouse Tracking
+    let mx = -100, my = -100, cx = -100, cy = -100;
+    let isPressed = false;
+    let isHoverLink = false;
+
+    // ─────────────────────────────────────────────────────────────
+    // Setup Shade Canvas (Drifting window shadow)
+    // ─────────────────────────────────────────────────────────────
+    const sCtx = shadeCanvas.getContext('2d');
+    function initShade() {
+      sCtx.fillStyle = '#ffffff';
+      sCtx.fillRect(0, 0, 64, 36);
+      sCtx.strokeStyle = 'rgba(120, 114, 96, 0.85)';
+      sCtx.lineCap = 'round';
+      const curves = [
+        [-10, 26, 38, -8, 8],
+        [-8, 46, 58, -2, 5],
+        [-10, 62, 74, 6, 4],
+        [14, 78, 96, 16, 4],
+        [40, 82, 118, 22, 3],
+        [78, 80, 140, 34, 5],
+        [-12, 74, 22, 56, 6]
+      ];
+      curves.forEach(([x0, y0, x1, y1, lw]) => {
+        sCtx.lineWidth = lw;
+        sCtx.beginPath();
+        sCtx.moveTo(x0 * 0.5, y0 * 0.5);
+        sCtx.quadraticCurveTo(((x0 + x1) / 2 + 6) * 0.5, ((y0 + y1) / 2 + 8) * 0.5, x1 * 0.5, y1 * 0.5);
+        sCtx.stroke();
+      });
+    }
+    initShade();
+
+    // ─────────────────────────────────────────────────────────────
+    // Wave Math & SVG Path Construction
+    // ─────────────────────────────────────────────────────────────
+    function yAt(l, x, t, prog) {
+      const Wv = L.wave;
+      const base = mix(Wv.y0, Wv.y1, prog) + l.dy * mix(Wv.gap0, Wv.gap1, prog);
+      const amp = l.a * mix(1, 0.72, prog);
+      const freq = (2 * Math.PI / 1100) * l.k * (1 - 0.35 * prog);
+      return base + amp * Math.sin(freq * x + t * l.v + l.ph) + amp * 0.45 * Math.sin(freq * 2.3 * x - t * l.v * 0.7 + l.ph * 1.7);
+    }
+
+    function buildWaveSvg(svgEl, layers, t, prog) {
+      const step = 22;
+      const xStart = -DX - 40;
+      const xEnd = L.w + DX + 40;
+      const yBottom = L.h + DY + 60;
+      
+      let html = '';
+      layers.forEach(l => {
+        let x0 = xStart;
+        let x1 = xEnd;
+        if (l.span) {
+          x0 = mix(xStart, xEnd, l.span[0]);
+          x1 = mix(xStart, xEnd, l.span[1]);
+        }
+
+        let d = `M ${x0.toFixed(1)} ${yAt(l, x0, t, prog).toFixed(1)}`;
+        for (let x = x0 + step; x <= x1; x += step) {
+          d += ` L ${x.toFixed(1)} ${yAt(l, x, t, prog).toFixed(1)}`;
+        }
+        d += ` L ${x1.toFixed(1)} ${yAt(l, x1, t, prog).toFixed(1)}`;
+
+        if (l.fill) {
+          d += ` L ${x1.toFixed(1)} ${yBottom.toFixed(1)} L ${x0.toFixed(1)} ${yBottom.toFixed(1)} Z`;
+        }
+
+        html += `<path d="${d}" fill="${l.fill || 'none'}" stroke="var(--line)" stroke-width="3.2" stroke-linecap="round"/>`;
+      });
+      svgEl.innerHTML = html;
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // Resize & Responsive Calculation
+    // ─────────────────────────────────────────────────────────────
+    function resize() {
+      W = frame.clientWidth;
+      H = frame.clientHeight;
+      portrait = H > W;
+      document.documentElement.classList.toggle('portrait', portrait);
+
+      L = portrait ? LAY.port : LAY.land;
+      S = Math.min(W / L.w, H / L.h);
+      const DW = W / S;
+      const DH = H / S;
+      DX = (DW - L.w) / 2;
+      DY = (DH - L.h) / 2;
+
+      scene.style.transform = `translate(${DX * S}px, ${DY * S}px) scale(${S})`;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    // ─────────────────────────────────────────────────────────────
+    // Scene Navigation & Triggering
+    // ─────────────────────────────────────────────────────────────
+    function go(to) {
+      if (to === pTo) return;
+      pFrom = p;
+      pTo = to;
+      pT0 = performance.now();
+    }
+
+    document.querySelectorAll('[data-go]').forEach(el => {
+      el.addEventListener('click', (e) => {
+        e.preventDefault();
+        go(Number(el.getAttribute('data-go')));
+      });
+    });
+
+    window.addEventListener('wheel', (e) => {
+      if (wheelLocked) return;
+      if (e.deltaY > 12) {
+        go(1);
+        wheelLocked = true;
+        setTimeout(() => wheelLocked = false, 1200);
+      } else if (e.deltaY < -12) {
+        go(0);
+        wheelLocked = true;
+        setTimeout(() => wheelLocked = false, 1200);
+      }
+    }, { passive: true });
+
+    // Touch swipe support
+    let touchStartY = 0;
+    window.addEventListener('touchstart', e => { touchStartY = e.touches[0].clientY; }, { passive: true });
+    window.addEventListener('touchend', e => {
+      const diff = touchStartY - e.changedTouches[0].clientY;
+      if (diff > 40) go(1);
+      else if (diff < -40) go(0);
+    }, { passive: true });
+
+    // Copy command helper
+    const copyBtn = document.getElementById('copyBtn');
+    copyBtn.addEventListener('click', () => {
+      navigator.clipboard.writeText('git clone https://github.com/Mackming/thinktank.git && cd thinktank');
+      copyBtn.textContent = 'Copied!';
+      setTimeout(() => copyBtn.textContent = 'Copy Command', 2000);
+    });
+
+    // ─────────────────────────────────────────────────────────────
+    // Pointer & Cursor Loop
+    // ─────────────────────────────────────────────────────────────
+    if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+      document.documentElement.classList.add('fine');
+      window.addEventListener('pointermove', e => {
+        mx = e.clientX;
+        my = e.clientY;
+      });
+      window.addEventListener('pointerdown', e => {
+        isPressed = true;
+        ping.style.left = `${e.clientX}px`;
+        ping.style.top = `${e.clientY}px`;
+        ping.style.transform = 'scale(1)';
+        ping.style.opacity = '1';
+        ping.style.transition = 'none';
+        requestAnimationFrame(() => {
+          ping.style.transition = 'transform 0.65s cubic-bezier(0.2, 1, 0.3, 1), opacity 0.65s';
+          ping.style.transform = 'scale(2.6)';
+          ping.style.opacity = '0';
+        });
+      });
+      window.addEventListener('pointerup', () => { isPressed = false; });
+      
+      document.querySelectorAll('a, button, .mode-card').forEach(el => {
+        el.addEventListener('mouseenter', () => isHoverLink = true);
+        el.addEventListener('mouseleave', () => isHoverLink = false);
+      });
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // Main Render Loop (Computed Per Frame)
+    // ─────────────────────────────────────────────────────────────
+    let lastTime = performance.now();
+    function render(now) {
+      const dt = Math.min((now - lastTime) / 1000, 0.05);
+      lastTime = now;
+      const t = (now - t0) / 1000;
+
+      // Transition interpolation
+      const k = seg(now, pT0, pT0 + DUR);
+      p = mix(pFrom, pTo, io(k));
+
+      // Cursor easing
+      cx += (mx - cx) * (1 - Math.exp(-dt * 24));
+      cy += (my - cy) * (1 - Math.exp(-dt * 24));
+      const curScale = isPressed ? 0.7 : (isHoverLink ? 1.4 : 1.0);
+      cur.style.transform = `translate3d(${cx}px, ${cy}px, 0) scale(${curScale})`;
+
+      // Ambient shade translation & rotation
+      shadeCanvas.style.transform = `translate(${Math.sin(t * 0.35) * 2.2}%, ${Math.cos(t * 0.27) * 1.6}%) rotate(${Math.sin(t * 0.22) * 0.8}deg)`;
+
+      // Render Waves
+      buildWaveSvg(wBack, BACK_WAVES, t, p);
+      buildWaveSvg(wFront, FRONT_WAVES, t, p);
+
+      // Cloud Motion
+      const cloudX = ((L.w * 0.75 - t * 18) % (L.w + 600)) - 300;
+      cloudA.style.transform = `translate3d(${cloudX}px, ${L.cloud.y}px, 0)`;
+      cloudA.style.opacity = (1 - seg(p, 0.3, 0.7)).toFixed(2);
+
+      // Vessel (The Astrolabe of Reason) Riding the Main Front Wave
+      const vw = mix(L.vessel.w0, L.vessel.w1, p);
+      const vx = mix(L.vessel.x0, L.vessel.x1, p);
+      const vy = yAt(FRONT_WAVES[0], vx, t, p);
+      
+      // Calculate Wave Slope for Realistic Physics Tilt
+      const slope = (yAt(FRONT_WAVES[0], vx + 60, t, p) - yAt(FRONT_WAVES[0], vx - 60, t, p)) / 120;
+      const rot = Math.atan(slope) * 57.3 * 0.85;
+
+      vessel.style.width = `${vw}px`;
+      vessel.style.height = `${vw}px`;
+      vessel.style.left = `${vx - vw / 2}px`;
+      vessel.style.top = `${vy - vw * 0.82}px`;
+      vessel.style.transform = `rotate(${rot.toFixed(2)}deg)`;
+      vessel.style.opacity = (1 - seg(p, 0.75, 0.95)).toFixed(2);
+
+      // Scene 1 Copy (t1) Submersion
+      const intro = out(seg(now, t0 + 200, t0 + 1100));
+      const t1Opacity = intro * (1 - seg(p, 0.5, 0.72));
+      const t1TranslateY = (1 - intro) * 26 - p * 50;
+      t1.style.opacity = t1Opacity.toFixed(2);
+      t1.style.transform = `translate3d(0, ${t1TranslateY.toFixed(1)}px, 0)`;
+      t1.style.pointerEvents = p > 0.15 ? 'none' : 'auto';
+
+      // Scene 2 Copy (t2) Reveal
+      const hk = seg(p, 0.42, 0.84);
+      const t2Opacity = Math.pow(hk, 1.8);
+      const t2TranslateY = mix(70, 0, out(hk));
+      t2.style.opacity = t2Opacity.toFixed(2);
+      t2.style.transform = `translate3d(0, ${t2TranslateY.toFixed(1)}px, 0)`;
+      t2.style.pointerEvents = p > 0.85 ? 'auto' : 'none';
+
+      requestAnimationFrame(render);
+    }
+    requestAnimationFrame(render);
+
+  </script>
+</body>
+</html>
