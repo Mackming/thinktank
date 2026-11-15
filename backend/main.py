@@ -13,8 +13,14 @@ from datetime import datetime
 import json
 import os
 import shutil
+from typing import Optional, Dict, Any
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from orchestrator import ThinkTankOrchestrator
 from automation import browser_engine
+from api_engine import api_engine
 from database import get_all_sessions, get_session, get_all_spaces, create_space, get_books_by_space, delete_book_db, add_book
 from memory import store_knowledge, delete_knowledge
 from pdf_cleaner import clean_and_chunk_pdf
@@ -68,6 +74,39 @@ class SpaceCreate(BaseModel):
     name: str
     description: str = ""
     icon: str = "Library"
+
+class ApiKeyUpdateRequest(BaseModel):
+    deepseek: Optional[Dict[str, Any]] = None
+    qwen: Optional[Dict[str, Any]] = None
+    glm: Optional[Dict[str, Any]] = None
+    openrouter: Optional[Dict[str, Any]] = None
+    openai: Optional[Dict[str, Any]] = None
+
+class VerifyKeysRequest(BaseModel):
+    agent: Optional[str] = None
+
+@app.get("/api/config/api-keys")
+async def get_api_keys_config():
+    return api_engine.get_status()
+
+@app.post("/api/config/api-keys")
+async def update_api_keys_config(req: ApiKeyUpdateRequest):
+    data = req.model_dump(exclude_unset=True)
+    api_engine.update_config(data, persist_to_env=True)
+    return {"status": "ok", "config": api_engine.get_status()}
+
+@app.post("/api/config/verify-keys")
+async def verify_api_keys(req: Optional[VerifyKeysRequest] = None):
+    agent = req.agent if req else None
+    if agent:
+        res = await api_engine.verify_connection(agent)
+        return {"results": [res]}
+    else:
+        results = []
+        for a in ["deepseek", "qwen", "glm"]:
+            res = await api_engine.verify_connection(a)
+            results.append(res)
+        return {"results": results}
 
 @app.get("/api/spaces")
 async def api_get_spaces():
@@ -147,24 +186,48 @@ async def websocket_endpoint(websocket: WebSocket):
             payload = json.loads(data)
             
             if payload.get("action") == "setup_agents":
-                from orchestrator import MODELS
+                engine_mode = payload.get("engine_mode", "browser")
                 active_models = payload.get("active_models", ["deepseek", "qwen", "glm"])
                 
-                await websocket.send_json({
-                    "type": "status",
-                    "agent_name": "System",
-                    "message": "Opening browser tabs. Please log in manually...",
-                    "timestamp": datetime.now().isoformat()
-                })
-                
-                urls_to_open = [MODELS[m] for m in active_models if m in MODELS]
-                await browser_engine.setup_agents(urls_to_open)
-                await websocket.send_json({
-                    "type": "status",
-                    "agent_name": "System",
-                    "message": "Browser opened. Please log in manually.",
-                    "timestamp": datetime.now().isoformat()
-                })
+                if engine_mode == "api":
+                    missing = []
+                    for m in active_models:
+                        configured, _ = api_engine.check_agent_configured(m)
+                        if not configured:
+                            missing.append(m)
+                    
+                    if missing:
+                        await websocket.send_json({
+                            "type": "warning",
+                            "agent_name": "System",
+                            "message": f"API keys missing for: {', '.join(missing)}. Please configure your API keys.",
+                            "timestamp": datetime.now().isoformat()
+                        })
+                    else:
+                        await websocket.send_json({
+                            "type": "status",
+                            "agent_name": "System",
+                            "message": "All API keys configured. API Fleet is ready.",
+                            "timestamp": datetime.now().isoformat()
+                        })
+                else:
+                    from orchestrator import MODELS
+                    
+                    await websocket.send_json({
+                        "type": "status",
+                        "agent_name": "System",
+                        "message": "Opening browser tabs. Please log in manually...",
+                        "timestamp": datetime.now().isoformat()
+                    })
+                    
+                    urls_to_open = [MODELS[m] for m in active_models if m in MODELS]
+                    await browser_engine.setup_agents(urls_to_open)
+                    await websocket.send_json({
+                        "type": "status",
+                        "agent_name": "System",
+                        "message": "Browser opened. Please log in manually.",
+                        "timestamp": datetime.now().isoformat()
+                    })
                 
             elif payload.get("action") == "confirm_login":
                 await websocket.send_json({
@@ -178,9 +241,8 @@ async def websocket_endpoint(websocket: WebSocket):
                 mode = payload.get("mode", "debate")
                 master_prompt = payload.get("master_prompt", "")
                 space_id = payload.get("space_id", None)
-                
-                # Retrieve active models configuration
                 active_models = payload.get("active_models", ["deepseek", "qwen", "glm"])
+                engine_mode = payload.get("engine_mode", "browser")
                 
                 if not master_prompt:
                     await websocket.send_json({
@@ -192,7 +254,12 @@ async def websocket_endpoint(websocket: WebSocket):
                     continue
 
                 co_pilot_mode = payload.get("co_pilot_mode", False)
-                active_orchestrator = ThinkTankOrchestrator(websocket, active_models, co_pilot_mode)
+                active_orchestrator = ThinkTankOrchestrator(
+                    websocket, 
+                    active_models, 
+                    co_pilot_mode, 
+                    engine_mode=engine_mode
+                )
                 
                 # Start workflow as background task so we can receive "stop_workflow" messages
                 asyncio.create_task(active_orchestrator.execute(mode, master_prompt, space_id))

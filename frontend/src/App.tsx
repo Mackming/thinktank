@@ -6,15 +6,21 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { MessageContent } from "./components/MessageContent";
-import { Loader2, Square, Send, Archive, Target, Lightbulb, Hammer, BookOpen, Swords, Network, Sparkles, Brain } from "lucide-react";
+import { Loader2, Square, Send, Archive, Target, Lightbulb, Hammer, BookOpen, Swords, Network, Sparkles, Brain, Key, Globe, Settings2 } from "lucide-react";
 import { HistorySidebar } from "./components/HistorySidebar";
 import { KnowledgeLibraryModal } from "./components/KnowledgeLibraryModal";
 import { CreateSpaceModal } from "./components/CreateSpaceModal";
+import { ApiKeyConfigModal } from "./components/ApiKeyConfigModal";
 import { Library, Plus } from "lucide-react";
 export default function App() {
   const { messages, status, sendMessage } = useWebSocket("ws://localhost:8001/ws");
   const [prompt, setPrompt] = useState("");
   const [mode, setMode] = useState("debate");
+  const [engineMode, setEngineMode] = useState<"browser" | "api">(() => {
+    return (localStorage.getItem("thinktank_engine_mode") as "browser" | "api") || "browser";
+  });
+  const [apiConfigStatus, setApiConfigStatus] = useState<any>(null);
+  const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
   const [activeModels, setActiveModels] = useState<Record<string, boolean>>({
     deepseek: true,
     qwen: true,
@@ -47,9 +53,38 @@ export default function App() {
   const [isAwaitingReview, setIsAwaitingReview] = useState(false);
   const [reviewText, setReviewText] = useState("");
 
+  const isApiFleetReady = Boolean(
+    apiConfigStatus?.universal?.openrouter_configured ||
+    apiConfigStatus?.universal?.openai_configured ||
+    (activeModelsList.length > 0 && activeModelsList.every(m => apiConfigStatus?.agents?.[m]?.configured))
+  );
+
+  const configuredApiCount = activeModelsList.filter(
+    m => apiConfigStatus?.agents?.[m]?.configured || apiConfigStatus?.universal?.openrouter_configured || apiConfigStatus?.universal?.openai_configured
+  ).length;
+
   useEffect(() => {
     fetchSpaces();
+    fetchApiKeysStatus();
   }, []);
+
+  const fetchApiKeysStatus = async () => {
+    try {
+      const res = await fetch("/api/config/api-keys");
+      if (res.ok) {
+        const data = await res.json();
+        setApiConfigStatus(data);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleEngineModeChange = (val: string) => {
+    const nextMode = val as "browser" | "api";
+    setEngineMode(nextMode);
+    localStorage.setItem("thinktank_engine_mode", nextMode);
+  };
 
   const fetchSpaces = async () => {
     try {
@@ -112,8 +147,12 @@ export default function App() {
 
   const handleSetupAgents = () => {
     if (activeModelsList.length === 0) return alert("Please enable at least one model.");
+    if (engineMode === "api") {
+      setIsApiKeyModalOpen(true);
+      return;
+    }
     setIsSetupLoading(true);
-    sendMessage({ action: "setup_agents", active_models: activeModelsList });
+    sendMessage({ action: "setup_agents", engine_mode: "browser", active_models: activeModelsList });
     // Modal will open only when backend confirms via WebSocket message
   };
 
@@ -124,13 +163,18 @@ export default function App() {
   };
 
   const handleInitialize = () => {
-    if (!agentsReady) return;
+    if (engineMode === "browser" && !agentsReady) return;
+    if (engineMode === "api" && !isApiFleetReady) {
+      setIsApiKeyModalOpen(true);
+      return;
+    }
     if (activeModelsList.length === 0) return alert("Please enable at least one model.");
     setIsDebateActive(true);
     setIsArchiveMode(false);
     setCurrentRound("Round 1");
     sendMessage({
       action: "run_workflow",
+      engine_mode: engineMode,
       mode: mode,
       co_pilot_mode: isCoPilotMode,
       master_prompt: prompt || 'Design a gamified loyalty program for a shoe store.',
@@ -219,6 +263,36 @@ export default function App() {
 
         {/* Configuration */}
         <div className="px-8 py-4 flex flex-col gap-6">
+          {/* Engine Mode */}
+          <div className="flex flex-col gap-3">
+            <div className="flex justify-between items-center">
+              <label className="text-[11px] uppercase tracking-widest font-semibold text-muted-foreground">
+                Engine Mode
+              </label>
+              {engineMode === "api" && (
+                <button 
+                  onClick={() => setIsApiKeyModalOpen(true)}
+                  className="flex items-center gap-1.5 text-[10px] text-zinc-400 hover:text-white transition-colors bg-white/5 hover:bg-white/10 border border-white/10 px-2 py-0.5 rounded cursor-pointer"
+                  title="Configure API Keys"
+                >
+                  <Key className="w-3 h-3 text-emerald-400" />
+                  <span>Keys ({configuredApiCount}/{activeModelsList.length})</span>
+                  <Settings2 className="w-2.5 h-2.5 text-zinc-500" />
+                </button>
+              )}
+            </div>
+            <Tabs value={engineMode} onValueChange={handleEngineModeChange} className="w-full">
+              <TabsList className="grid w-full grid-cols-2 bg-muted/50 border border-border p-1 rounded-lg h-auto">
+                <TabsTrigger value="browser" className="text-xs data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm rounded-md transition-all flex items-center justify-center gap-1.5 py-2">
+                  <Globe className="w-3.5 h-3.5" /> Browser Mode
+                </TabsTrigger>
+                <TabsTrigger value="api" className="text-xs data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm rounded-md transition-all flex items-center justify-center gap-1.5 py-2">
+                  <Key className="w-3.5 h-3.5 text-emerald-400" /> API Mode
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+
           <div className="flex flex-col gap-3">
             <label className="text-[11px] uppercase tracking-widest font-semibold text-muted-foreground">
               Execution Strategy
@@ -342,7 +416,9 @@ export default function App() {
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                   </span>
                   <span className="text-xs font-mono text-emerald-500">
-                    {agentsReady ? "AGENTS READY" : "CONNECTED"}
+                    {engineMode === "browser"
+                      ? (agentsReady ? "AGENTS READY" : "CONNECTED")
+                      : (isApiFleetReady ? "API READY" : "KEYS NEEDED")}
                   </span>
                 </>
               ) : (
@@ -355,28 +431,40 @@ export default function App() {
           </div>
           
           <div className="flex flex-col gap-3">
-            {!agentsReady && (
-              <Button 
-                variant="outline"
-                className="w-full h-11 font-medium text-[13px] border-border hover:bg-muted hover:text-foreground transition-all disabled:opacity-50"
-                onClick={handleSetupAgents}
-                disabled={isSetupLoading || status !== 'open'}
-              >
-                {isSetupLoading ? (
-                  <span className="flex items-center gap-2">
-                    <span className="w-3 h-3 border border-zinc-500 border-t-zinc-200 rounded-full animate-spin"/>
-                    Opening Browsers...
-                  </span>
-                ) : "Setup Agents"}
-              </Button>
+            {engineMode === "browser" ? (
+              !agentsReady && (
+                <Button 
+                  variant="outline"
+                  className="w-full h-11 font-medium text-[13px] border-border hover:bg-muted hover:text-foreground transition-all disabled:opacity-50"
+                  onClick={handleSetupAgents}
+                  disabled={isSetupLoading || status !== 'open'}
+                >
+                  {isSetupLoading ? (
+                    <span className="flex items-center gap-2">
+                      <span className="w-3 h-3 border border-zinc-500 border-t-zinc-200 rounded-full animate-spin"/>
+                      Opening Browsers...
+                    </span>
+                  ) : "Setup Agents"}
+                </Button>
+              )
+            ) : (
+              !isApiFleetReady && (
+                <Button 
+                  variant="outline"
+                  className="w-full h-11 font-medium text-[13px] border-border hover:bg-muted hover:text-foreground transition-all flex items-center justify-center gap-2"
+                  onClick={() => setIsApiKeyModalOpen(true)}
+                >
+                  <Key className="w-4 h-4 text-emerald-400" />
+                  Configure API Keys
+                </Button>
+              )
             )}
-            
             
             {!isDebateActive ? (
               <Button 
                 className="w-full h-11 font-medium text-[13px] bg-foreground text-background hover:bg-foreground/90 hover:shadow-[0_0_20px_rgba(255,255,255,0.05)] border border-transparent rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                 onClick={handleInitialize}
-                disabled={!agentsReady}
+                disabled={engineMode === "browser" ? !agentsReady : !isApiFleetReady}
               >
                 Deploy ThinkTank
               </Button>
@@ -420,7 +508,11 @@ export default function App() {
         <div className="px-10 py-8 border-b border-border flex items-center justify-between z-10 bg-background/50 backdrop-blur-sm">
           <div className="flex items-center gap-4">
             <h2 className="text-sm font-semibold tracking-tight text-foreground">
-              {isArchiveMode ? "Vault Archive Viewer" : "Live Telemetry Feed"}
+              {isArchiveMode
+                ? "Vault Archive Viewer"
+                : engineMode === "api"
+                ? "Live Telemetry Feed · API Mode"
+                : "Live Telemetry Feed · Browser Mode"}
             </h2>
             {isArchiveMode && (
               <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-blue-500/10 border border-blue-500/20">
@@ -440,7 +532,9 @@ export default function App() {
             )}
           </div>
           <div className="flex items-center gap-4">
-            <span className="text-[11px] font-mono text-zinc-600">ID: RUN-77A9</span>
+            <span className="text-[11px] font-mono text-zinc-500 bg-white/5 border border-white/10 px-2 py-0.5 rounded uppercase">
+              {engineMode} ENGINE
+            </span>
           </div>
         </div>
         
@@ -453,7 +547,11 @@ export default function App() {
                     <Target className="w-8 h-8 text-foreground opacity-80" />
                   </div>
                   <h2 className="text-xl font-bold tracking-tight text-foreground">Your Business Council is Ready</h2>
-                  <p className="text-sm text-muted-foreground max-w-md">Enter a prompt or select a starter below to initiate the multi-agent analysis.</p>
+                  <p className="text-sm text-muted-foreground max-w-md">
+                    {engineMode === "api" && !isApiFleetReady
+                      ? "Configure your API keys in the control panel to activate the autonomous council."
+                      : "Enter an instruction prompt or choose a starter below to initiate multi-agent deliberation."}
+                  </p>
                 </div>
                 <div className="flex flex-wrap justify-center gap-3 max-w-2xl">
                   {["Analyze my Q3 growth strategy", "Critique my morning routine", "Design a gamified loyalty program"].map((starter, i) => (
@@ -600,6 +698,13 @@ export default function App() {
         isOpen={isCreateSpaceOpen}
         onClose={() => setIsCreateSpaceOpen(false)}
         onSpaceCreated={handleSpaceCreated}
+      />
+
+      {/* API Key Configuration Modal */}
+      <ApiKeyConfigModal
+        isOpen={isApiKeyModalOpen}
+        onClose={() => setIsApiKeyModalOpen(false)}
+        onConfigSaved={(status) => setApiConfigStatus(status)}
       />
 
     </div>

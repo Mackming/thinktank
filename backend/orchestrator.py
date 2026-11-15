@@ -3,6 +3,7 @@ import asyncio
 from typing import Any, Dict, List
 from datetime import datetime
 from automation import browser_engine
+from api_engine import api_engine
 from models import AgentThought, Critique, FinalSynthesis, CoachQuestion
 import prompts
 import database
@@ -15,13 +16,14 @@ MODELS = {
 }
 
 class ThinkTankOrchestrator:
-    def __init__(self, websocket, active_models=None, co_pilot_mode: bool = False):
+    def __init__(self, websocket, active_models=None, co_pilot_mode: bool = False, engine_mode: str = "browser"):
         self.ws = websocket
         self.active_models = active_models or ["deepseek", "qwen", "glm"]
         self.interjection_queue = asyncio.Queue()
         self.co_pilot_mode = co_pilot_mode
         self.continue_event = asyncio.Event()
         self.stop_requested = asyncio.Event()
+        self.engine_mode = engine_mode.lower() if engine_mode else "browser"
 
     async def broadcast(self, msg_type: str, agent_name: str, message: str, content: Any = None):
         payload = {
@@ -48,9 +50,13 @@ class ThinkTankOrchestrator:
                     raise Exception(f"Failed to parse JSON from {agent_name} after {max_retries} attempts. Error: {str(e)}")
                 await self.broadcast("error", agent_name, f"JSON parsing failed. Requesting repair (Attempt {attempt+1})...")
                 repair_prompt = f"Your previous response was not valid JSON. Please fix it and output ONLY valid JSON wrapped in <THINK_JSON> tags. Error: {str(e)}"
-                await browser_engine.send_prompt(url, repair_prompt)
-                await browser_engine.wait_for_completion(url)
-                response_text = await browser_engine.get_last_response(url)
+                if self.engine_mode == "api":
+                    res = await api_engine.query(agent_name, repair_prompt)
+                    response_text = res.get("text", "")
+                else:
+                    await browser_engine.send_prompt(url, repair_prompt)
+                    await browser_engine.wait_for_completion(url)
+                    response_text = await browser_engine.get_last_response(url)
 
     async def _check_agent_health(self, url: str, agent_name: str) -> bool:
         diag = await browser_engine.diagnose_page(url)
@@ -101,23 +107,57 @@ class ThinkTankOrchestrator:
         return corporate_memory_prompt + dossier_prompt
 
     async def _run_agent_turn(self, agent_name: str, url: str, prompt: str, schema_class, role_badge: str):
-        if not await self._check_agent_health(url, agent_name):
-            raise Exception(f"{agent_name} agent has a critical issue. Check the browser and retry.")
+        if self.engine_mode == "api":
+            configured, err_msg = api_engine.check_agent_configured(agent_name)
+            if not configured:
+                raise Exception(f"API key missing or invalid for {agent_name}: {err_msg}. Please configure your API keys.")
             
-        await self.broadcast("status", agent_name, f"Generating response for role: {role_badge}...")
-        await browser_engine.send_prompt(url, prompt)
-        await browser_engine.wait_for_completion(url, stop_event=self.stop_requested)
-        raw_resp = await browser_engine.get_last_response(url)
-        await self.broadcast("status", agent_name, "Enforcing JSON schema...")
-        data = await self.enforce_json(url, agent_name, schema_class, raw_resp)
-        
-        native_reasoning = await browser_engine.get_native_reasoning(url)
-        if native_reasoning:
-            data["native_reasoning"] = native_reasoning
+            cfg = api_engine.get_agent_config(agent_name)
+            await self.broadcast("status", agent_name, f"Generating response for role: {role_badge} via API ({cfg['model']})...")
+
+            if self.stop_requested.is_set():
+                raise asyncio.CancelledError("User stopped workflow")
+
+            query_task = asyncio.create_task(api_engine.query(agent_name, prompt))
+            stop_waiter = asyncio.create_task(self.stop_requested.wait())
+            done, pending = await asyncio.wait([query_task, stop_waiter], return_when=asyncio.FIRST_COMPLETED)
+            for p in pending:
+                p.cancel()
+
+            if stop_waiter in done and self.stop_requested.is_set():
+                raise asyncio.CancelledError("User stopped workflow")
+
+            api_res = query_task.result()
+            raw_resp = api_res.get("text", "")
+            native_reasoning = api_res.get("native_reasoning")
+
+            await self.broadcast("status", agent_name, "Enforcing JSON schema...")
+            data = await self.enforce_json(url, agent_name, schema_class, raw_resp)
+
+            if native_reasoning:
+                data["native_reasoning"] = native_reasoning
+
+            data["current_role"] = role_badge
+            await self.broadcast("success", agent_name, "Turn generated successfully.", data)
+            return data
+        else:
+            if not await self._check_agent_health(url, agent_name):
+                raise Exception(f"{agent_name} agent has a critical issue. Check the browser and retry.")
+                
+            await self.broadcast("status", agent_name, f"Generating response for role: {role_badge}...")
+            await browser_engine.send_prompt(url, prompt)
+            await browser_engine.wait_for_completion(url, stop_event=self.stop_requested)
+            raw_resp = await browser_engine.get_last_response(url)
+            await self.broadcast("status", agent_name, "Enforcing JSON schema...")
+            data = await self.enforce_json(url, agent_name, schema_class, raw_resp)
             
-        data["current_role"] = role_badge
-        await self.broadcast("success", agent_name, "Turn generated successfully.", data)
-        return data
+            native_reasoning = await browser_engine.get_native_reasoning(url)
+            if native_reasoning:
+                data["native_reasoning"] = native_reasoning
+                
+            data["current_role"] = role_badge
+            await self.broadcast("success", agent_name, "Turn generated successfully.", data)
+            return data
 
     async def _run_debate(self, master_prompt: str, combined_context: str):
         transcript = []
@@ -127,9 +167,9 @@ class ThinkTankOrchestrator:
         critic = self.active_models[1] if len(self.active_models) > 1 else self.active_models[0]
         synthesizer = self.active_models[-1]
         
-        prop_url = MODELS[proposer]
-        crit_url = MODELS[critic]
-        synth_url = MODELS[synthesizer]
+        prop_url = MODELS.get(proposer, "")
+        crit_url = MODELS.get(critic, "")
+        synth_url = MODELS.get(synthesizer, "")
         
         arch_data = None
         vision_data = None
@@ -180,7 +220,7 @@ class ThinkTankOrchestrator:
             worker = self.active_models[0]
             await self.broadcast("status", "System", "Only 1 model active. Falling back to sequential solo work.")
             prompt = prompts.build_parallel_worker_prompt(master_prompt, combined_context)
-            data = await self._run_agent_turn(worker, MODELS[worker], prompt, AgentThought, "Solo Worker")
+            data = await self._run_agent_turn(worker, MODELS.get(worker, ""), prompt, AgentThought, "Solo Worker")
             transcript.append({"role": worker, "content": data})
             return transcript, {"executive_summary": data.get("main_argument"), "action_plan": [], "caveats_and_assumptions": []}
             
@@ -188,7 +228,7 @@ class ThinkTankOrchestrator:
         tasks = []
         for i, model in enumerate(self.active_models):
             prompt = prompts.build_parallel_worker_prompt(master_prompt, f"Focus on angle/perspective {i+1} of {len(self.active_models)}.\\n{combined_context}")
-            tasks.append(self._run_agent_turn(model, MODELS[model], prompt, AgentThought, f"Parallel Worker {i+1}"))
+            tasks.append(self._run_agent_turn(model, MODELS.get(model, ""), prompt, AgentThought, f"Parallel Worker {i+1}"))
             
         results = await asyncio.gather(*tasks, return_exceptions=True)
         for i, res in enumerate(results):
@@ -200,7 +240,7 @@ class ThinkTankOrchestrator:
         # Final Merge by last active model
         synthesizer = self.active_models[-1]
         synth_prompt = prompts.build_synthesizer_prompt(master_prompt, transcript) + combined_context
-        synth_data = await self._run_agent_turn(synthesizer, MODELS[synthesizer], synth_prompt, FinalSynthesis, "Merge Synthesizer")
+        synth_data = await self._run_agent_turn(synthesizer, MODELS.get(synthesizer, ""), synth_prompt, FinalSynthesis, "Merge Synthesizer")
         
         return transcript, synth_data
 
@@ -217,7 +257,7 @@ class ThinkTankOrchestrator:
             prompt = prompts.build_refinement_prompt(master_prompt, role, current_text)
             prompt += combined_context + ceo_feedback + self._check_interjections()
             
-            data = await self._run_agent_turn(model, MODELS[model], prompt, AgentThought, role)
+            data = await self._run_agent_turn(model, MODELS.get(model, ""), prompt, AgentThought, role)
             transcript.append({"round": i+1, "role": model, "content": data})
             current_text = data.get("main_argument", "")
             ceo_feedback = await self._handle_co_pilot_pause()
@@ -240,7 +280,7 @@ class ThinkTankOrchestrator:
             prompt = prompts.build_coach_prompt(master_prompt, previous_answers)
             prompt += combined_context + ceo_feedback + self._check_interjections()
             
-            data = await self._run_agent_turn(model, MODELS[model], prompt, CoachQuestion, "Coach")
+            data = await self._run_agent_turn(model, MODELS.get(model, ""), prompt, CoachQuestion, "Coach")
             transcript.append({"round": turn+1, "role": model, "content": data})
             
             # Force co-pilot pause for user answer

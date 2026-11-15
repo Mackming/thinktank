@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ThinkTank — Autonomous Council of Frontier AI Minds</title>
-  <meta name="description" content="Autonomous multi-agent deliberation platform orchestrating frontier AI models (DeepSeek, Qwen, GLM) through stealth browser automation, structured debate, and local vector RAG.">
+  <meta name="description" content="Autonomous multi-agent deliberation platform orchestrating frontier AI models (DeepSeek, Qwen, GLM) through dual execution engines (stealth browser automation & direct API mode), structured debate, and local vector RAG.">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23201c15' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='10'/><path d='m4.93 4.93 4.24 4.24'/><path d='m14.83 9.17 4.24-4.24'/><path d='m14.83 14.83 4.24 4.24'/><path d='m9.17 14.83-4.24 4.24'/><circle cx='12' cy='12' r='4'/></svg>">
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -799,7 +799,7 @@
     <section class="hero-section" id="arena">
       <div class="hero-container">
         <div class="hero-content">
-          <div class="eyebrow">The Council of Three · Zero-Cost AI</div>
+          <div class="eyebrow">The Council of Three · Dual Engine (Browser & API)</div>
           <h1 class="hero-title">The Arena of<br>Rival Minds</h1>
           <p class="hero-sub">
             Where solitary AI models hallucinate in comfortable isolation, ThinkTank orchestrates rigorous cross-examination. DeepSeek, Qwen, and GLM locked in structured dialectics to forge verifiable strategy.
@@ -946,7 +946,7 @@
                     <polyline points="20 6 9 17 4 12"></polyline>
                   </svg>
                 </div>
-                <div><strong>Zero API Token Costs:</strong> Powered by persistent browser sessions in DeepSeek, Qwen, and GLM.</div>
+                <div><strong>Dual Execution Engines:</strong> Run zero-cost via persistent browser sessions or switch to high-speed headless API Mode.</div>
               </li>
             </ul>
           </div>
@@ -1062,7 +1062,7 @@
           <div class="eyebrow">Engineering Rigor</div>
           <h2>Under the Hood</h2>
           <p>
-            ThinkTank is not another wrapper around OpenAI API credits. It is a full-fledged automation and vector synthesis runtime.
+            ThinkTank is a full-fledged deliberation runtime offering both zero-cost stealth browser automation and production-grade direct API execution.
           </p>
         </div>
 
@@ -1077,13 +1077,13 @@
                   <line x1="12" y1="17" x2="12" y2="21"/>
                 </svg>
               </div>
-              <h3>Stealth Browser Engine</h3>
+              <h3>Dual Engine Architecture</h3>
               <p>
-                Powered by Playwright and <code>playwright-stealth</code>, ThinkTank launches persistent Chromium contexts that store your active sessions securely on your local disk. Zero API keys. Zero metered token consumption.
+                Choose between <strong>Browser Mode</strong> (Playwright stealth automation using local saved sessions for zero token costs) and <strong>API Mode</strong> (direct high-speed async execution with official DeepSeek, Qwen, and GLM keys or OpenRouter/OpenAI fallbacks).
               </p>
             </div>
             <div class="arch-footer">
-              FILE: <code>backend/automation.py</code>
+              FILES: <code>backend/automation.py</code> &bull; <code>backend/api_engine.py</code>
             </div>
           </div>
 
@@ -1194,7 +1194,7 @@
               <span><span class="term-comment"># 1. Clone the repository</span><br><span class="term-cmd">git clone https://github.com/Mackming/thinktank.git && cd thinktank</span></span>
             </div>
             <div class="term-line" style="margin-top: 12px;">
-              <span><span class="term-comment"># 2. Setup backend virtual environment & install requirements</span><br><span class="term-cmd">cd backend && python -m venv venv && .\venv\Scripts\Activate.ps1<br>pip install -r requirements.txt && playwright install chromium</span></span>
+              <span><span class="term-comment"># 2. Setup backend virtual environment & install requirements</span><br><span class="term-cmd">cd backend && python -m venv venv && .\venv\Scripts\Activate.ps1<br>pip install -r requirements.txt && playwright install chromium<br><span class="term-comment"># (Optional for API Mode):</span> cp .env.example .env</span></span>
             </div>
             <div class="term-line" style="margin-top: 12px;">
               <span><span class="term-comment"># 3. Start the backend runtime</span><br><span class="term-cmd">python run.py</span></span>
