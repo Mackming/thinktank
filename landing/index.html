@@ -717,24 +717,26 @@
       margin: 0 auto;
     }
     .footer-built-by {
-      margin: 22px auto 0;
-      padding-top: 18px;
-      border-top: 1px solid rgba(0, 0, 0, .12);
-      max-width: 320px;
+      margin: 36px auto 0;
+      padding-top: 28px;
+      border-top: 2px solid var(--line);
+      max-width: 420px;
       font-family: "Sorts Mill Goudy", serif;
-      font-size: 14px;
-      color: #5a5241;
+      font-size: 22px;
+      font-style: italic;
+      color: #3d3628;
     }
-    .footer-built-by strong { color: var(--line); font-weight: 700; }
     .footer-built-by a {
-      display: block;
-      margin-top: 4px;
-      font: 700 12px/1 "Josefin Sans", sans-serif;
-      letter-spacing: .12em;
-      color: inherit;
+      font-style: normal;
+      font-weight: 700;
+      color: var(--line);
       text-decoration: underline;
-      text-underline-offset: 4px;
+      text-decoration-thickness: 2px;
+      text-underline-offset: 5px;
+      transition: opacity .2s ease;
     }
+    .footer-built-by a:hover,
+    .footer-built-by a:focus-visible { opacity: .65; }
 
     /* Responsive */
     @media (max-width: 1024px) {
@@ -1240,8 +1242,7 @@
         </p>
 
         <p class="footer-built-by">
-          Built by <strong>Taqi Kazmi</strong>
-          <a href="https://taqikazmi.xyz" target="_blank" rel="noopener">taqikazmi.xyz</a>
+          Built by <a href="https://taqikazmi.xyz" target="_blank" rel="noopener">Taqi Kazmi</a>
         </p>
       </div>
     </footer>
